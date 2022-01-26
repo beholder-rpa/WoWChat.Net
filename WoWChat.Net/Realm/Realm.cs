@@ -1,0 +1,24 @@
+﻿namespace WoWChat.Net.Realm;
+
+public record Realm
+{
+  public byte Type { get; init; }
+
+  public byte Locked { get; init; }
+
+  public byte Flags { get; init; }
+
+  public string Name { get; init; } = string.Empty;
+
+  public string Host { get; init; } = string.Empty;
+
+  public int Port { get; init; }
+
+  public uint Population { get; init; }
+
+  public byte Characters { get; init; }
+
+  public byte TimeZone { get; init; }
+
+  public byte RealmId { get; init; }
+}

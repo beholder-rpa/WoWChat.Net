@@ -38,6 +38,7 @@ public static class IServiceCollectionExtensions
     // TODO...
 
     // WoWChat
+    services.AddSingleton<WoWChatGlobalState>();
     services.AddSingleton<IWoWChat, WoWChat>();
   }
 }

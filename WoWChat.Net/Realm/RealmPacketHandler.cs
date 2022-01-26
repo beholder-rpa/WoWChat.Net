@@ -1,22 +1,37 @@
 ﻿namespace WoWChat.Net.Realm
 {
+  using Common;
   using DotNetty.Transport.Channels;
+  using Extensions;
+  using Helpers;
   using Microsoft.Extensions.Logging;
   using Microsoft.Extensions.Options;
+  using Options;
   using System;
   using System.Linq;
-  using Common;
-  using Options;
+  using System.Text.RegularExpressions;
 
   public class RealmPacketHandler : ChannelHandlerAdapter
   {
+    protected readonly WoWChatGlobalState _global;
     protected readonly WowChatOptions _options;
     protected readonly ILogger<RealmPacketHandler> _logger;
 
     private int _logonState = 0;
+    private SRPClient? _srpClient;
 
-    public RealmPacketHandler(IOptions<WowChatOptions> options, ILogger<RealmPacketHandler> logger)
+    private IDictionary<(int, Platform), byte[]> _buildCrcHashes = new Dictionary<(int, Platform), byte[]> {
+      { (5875, Platform.Mac), new byte[] { 0x8D, 0x17, 0x3C, 0xC3, 0x81, 0x96, 0x1E, 0xEB, 0xAB, 0xF3, 0x36, 0xF5, 0xE6, 0x67, 0x5B, 0x10, 0x1B, 0xB5, 0x13, 0xE5 } },
+      { (5875, Platform.Windows), new byte[] { 0x95, 0xED, 0xB2, 0x7C, 0x78, 0x23, 0xB3, 0x63, 0xCB, 0xDD, 0xAB, 0x56, 0xA3, 0x92, 0xE7, 0xCB, 0x73, 0xFC, 0xCA, 0x20 } },
+      { (8606, Platform.Mac), new byte[] { 0xD8, 0xB0, 0xEC, 0xFE, 0x53, 0x4B, 0xC1, 0x13, 0x1E, 0x19, 0xBA, 0xD1, 0xD4, 0xC0, 0xE8, 0x13, 0xEE, 0xE4, 0x99, 0x4F } },
+      { (8606, Platform.Windows), new byte[] { 0x31, 0x9A, 0xFA, 0xA3, 0xF2, 0x55, 0x96, 0x82, 0xF9, 0xFF, 0x65, 0x8B, 0xE0, 0x14, 0x56, 0x25, 0x5F, 0x45, 0x6F, 0xB1 } },
+      { (12340, Platform.Mac), new byte[] { 0xB7, 0x06, 0xD1, 0x3F, 0xF2, 0xF4, 0x01, 0x88, 0x39, 0x72, 0x94, 0x61, 0xE3, 0xF8, 0xA0, 0xE2, 0xB5, 0xFD, 0xC0, 0x34 } },
+      { (12340, Platform.Windows), new byte[] { 0xCD, 0xCB, 0xBD, 0x51, 0x88, 0x31, 0x5E, 0x6B, 0x4D, 0x19, 0x44, 0x9D, 0x49, 0x2D, 0xBC, 0xFA, 0xF1, 0x56, 0xA3, 0x47 } }
+    };
+
+    public RealmPacketHandler(WoWChatGlobalState global, IOptions<WowChatOptions> options, ILogger<RealmPacketHandler> logger)
     {
+      _global = global ?? throw new ArgumentNullException(nameof(global));
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -29,7 +44,7 @@
     public override void ChannelActive(IChannelHandlerContext context)
     {
       _logger.LogInformation("Connected! Sending account login information...");
-      var authChallenge = CreateClientAuthChallenge();
+      var authChallenge = CreateClientAuthChallenge(context);
 
       context.WriteAndFlushAsync(authChallenge).Wait();
 
@@ -40,63 +55,239 @@
     {
       if (message is Packet packet)
       {
-        switch (packet.CommandId)
+        switch (packet.Id)
         {
           case (int)RealmAuthCommand.CMD_AUTH_LOGON_CHALLENGE when _logonState == 0:
+            HandleAuthLogonChallenge(context, packet);
             break;
           case (int)RealmAuthCommand.CMD_AUTH_LOGON_PROOF when _logonState == 1:
+            HandleAuthLogonProof(context, packet);
             break;
           case (int)RealmAuthCommand.CMD_REALM_LIST when _logonState == 2:
+            HandleRealmList(context, packet);
             break;
           default:
-            _logger.LogInformation("Received packet {commandId} in unexpected logonState {logonState}", packet.CommandId, _logonState);
-            packet.Dispose();
+            _logger.LogInformation("Received packet {commandId} in unexpected logonState {logonState}", packet.Id, _logonState);
+            packet.ByteBuf.Release();
             return;
         }
-        packet.Dispose();
+        packet.ByteBuf.Release();
         _logonState += 1;
+        return;
       }
 
       _logger.LogError("Packet is instance of {messageType}", message.GetType());
       base.ChannelRead(context, message);
     }
 
-    protected virtual Packet CreateClientAuthChallenge()
+    protected virtual Packet CreateClientAuthChallenge(IChannelHandlerContext context)
     {
       var username = _options.AccountName;
       var version = _options.Version.Split(".").Select(v => byte.Parse(v)).ToArray();
       var platform = _options.Platform == Platform.Windows ? "Win" : "Mac";
 
-      var packet = new Packet((int)RealmAuthCommand.CMD_AUTH_LOGON_CHALLENGE, 128);
+      var byteBuf = context.Allocator.Buffer(50, 100);
 
       // seems to be 3 for vanilla and 8 for bc/wotlk
       if (_options.GetExpansion() == WoWExpansion.Vanilla)
       {
-        packet.WriteByte(3);
+        byteBuf.WriteByte(3);
       }
       else
       {
-        packet.WriteByte(8);
+        byteBuf.WriteByte(8);
       }
 
       // https://wowdev.wiki/CMD_AUTH_LOGON_CHALLENGE_Client
-      packet.WriteUShortLE((ushort)(username.Length + 30));
-      packet.WriteStringLE("WoW");
-      packet.WriteBytes(version);
-      packet.WriteUShortLE(_options.GetBuild());
-      packet.WriteStringLE("x86");
-      packet.WriteStringLE(platform);
-      packet.WriteAsciiLE("enUS");
-      packet.WriteUIntLE(0);
-      packet.WriteByte(127);
-      packet.WriteByte(0);
-      packet.WriteByte(0);
-      packet.WriteByte(1);
-      packet.WriteByte((byte)username.Length);
-      packet.WriteAscii(username.ToUpperInvariant());
+      byteBuf.WriteUnsignedShortLE((ushort)(username.Length + 30));
+      byteBuf.WriteStringLE("WoW");
+      byteBuf.WriteBytes(version);
+      byteBuf.WriteUnsignedShortLE(_options.GetBuild());
+      byteBuf.WriteStringLE("x86");
+      byteBuf.WriteStringLE(platform);
+      byteBuf.WriteAsciiLE("enUS");
+      byteBuf.WriteUnsignedIntLE(0);
+      byteBuf.WriteByte(127);
+      byteBuf.WriteByte(0);
+      byteBuf.WriteByte(0);
+      byteBuf.WriteByte(1);
+      byteBuf.WriteByte((byte)username.Length);
+      byteBuf.WriteAscii(username.ToUpperInvariant());
+      return new Packet(RealmAuthCommand.CMD_AUTH_LOGON_CHALLENGE, byteBuf);
+    }
 
-      var foo = BitConverter.ToString(packet.ByteBuf);
-      return packet;
+    protected virtual void HandleAuthLogonChallenge(IChannelHandlerContext ctx, Packet msg)
+    {
+      var _ = msg.ByteBuf.ReadByte(); // error?
+      var result = msg.ByteBuf.ReadByte();
+      if (!RealmHelpers.IsAuthResultSuccess(result))
+      {
+        _logger.LogError("Error Message: {msg}", RealmHelpers.GetMessage(result));
+        ctx.CloseAsync().Wait();
+        //realmConnectionCallback.error
+        return;
+      }
+
+      var B = msg.ByteBuf.ReadBytes(32).GetArrayCopy();
+      var gLength = msg.ByteBuf.ReadByte();
+      var g = msg.ByteBuf.ReadBytes(gLength).GetArrayCopy();
+      var nLength = msg.ByteBuf.ReadByte();
+      var n = msg.ByteBuf.ReadBytes(nLength).GetArrayCopy();
+      var salt = msg.ByteBuf.ReadBytes(32).GetArrayCopy();
+      var nonce = msg.ByteBuf.ReadBytes(16).GetArrayCopy();
+      var securityFlag = msg.ByteBuf.ReadByte();
+      if (securityFlag != 0)
+      {
+        _logger.LogError("Two factor authentication is enabled for this account. Please disable it or use another account.");
+        ctx.CloseAsync().Wait();
+        //realmConnectionCallback.error
+        return;
+      }
+
+      _srpClient = new SRPClient(
+        _options.AccountName,
+        _options.AccountPassword,
+        B,
+        g,
+        n,
+        salt,
+        nonce
+        );
+
+      var aArray = _srpClient.A.ToCleanByteArray();
+
+      var byteBuf = ctx.Allocator.Buffer(74, 74);
+      byteBuf.WriteBytes(aArray);
+      byteBuf.WriteBytes(_srpClient.Proof);
+      var crc = new byte[20];
+      if (_buildCrcHashes.ContainsKey((_options.GetBuild(), _options.Platform)))
+      {
+        crc = _buildCrcHashes[(_options.GetBuild(), _options.Platform)];
+      }
+      byteBuf.WriteBytes(crc);
+      byteBuf.WriteByte(0);
+      byteBuf.WriteByte(0);
+
+      ctx.WriteAndFlushAsync(new Packet(RealmAuthCommand.CMD_AUTH_LOGON_PROOF, byteBuf));
+    }
+
+    protected virtual void HandleAuthLogonProof(IChannelHandlerContext ctx, Packet packet)
+    {
+      var result = packet.ByteBuf.ReadByte();
+
+      if (!RealmHelpers.IsAuthResultSuccess(result))
+      {
+        _logger.LogError("Error Message: {msg}", RealmHelpers.GetMessage(result));
+        //expectedDisconnect = true;
+        ctx.CloseAsync().Wait();
+
+        if (result == (byte)RealmAuthResult.WOW_FAIL_UNKNOWN_ACCOUNT)
+        {
+          // seems sometimes this error happens even on a legit connect. so just run regular reconnect loop
+          // realmConnectionCallback.disconnected
+        }
+        else
+        {
+          //realmConnectionCallback.error
+        }
+        return;
+      }
+
+      var proof = packet.ByteBuf.ReadBytes(20).GetArrayCopy();
+      if (_srpClient == null)
+      {
+        throw new InvalidOperationException("SRPClient was null when handling login proof");
+      }
+
+      if (!_srpClient.ExpectedProofResponse.SequenceEqual(proof))
+      {
+        _logger.LogError("Logon proof generated by client and server differ. Something is very wrong! Will try to reconnect in a moment.");
+        //expectedDisconnect = true;
+        ctx.CloseAsync().Wait();
+        // Also sometimes happens on a legit connect.
+        //realmConnectionCallback.disconnected
+        return;
+      }
+
+      var _ = packet.ByteBuf.ReadIntLE(); // account flag
+
+      _global.SRPClient = _srpClient;
+
+      // ask for realm list
+      _logger.LogInformation("Successfully logged into realm server. Looking for realm {realmName}", _options.RealmName);
+      var ret = ctx.Allocator.Buffer(4, 4);
+      ret.WriteIntLE(0);
+      ctx.WriteAndFlushAsync(new Packet(RealmAuthCommand.CMD_REALM_LIST, ret));
+    }
+
+    protected virtual void HandleRealmList(IChannelHandlerContext ctx, Packet packet)
+    {
+      var configRealm = _options.RealmName;
+
+      var realmList = ParseRealmList(packet);
+      var realm = realmList.FirstOrDefault(realm => string.Equals(realm.Name, configRealm, StringComparison.CurrentCultureIgnoreCase));
+
+      if (realm == null)
+      {
+        _logger.LogError("Realm {realm} not found!", configRealm);
+        _logger.LogError("{realmCount} possible realms:", realmList.Count);
+        foreach (var availableRealm in realmList)
+        {
+          _logger.LogError("\t{realmName}", availableRealm.Name);
+        }
+      }
+      else
+      {
+        //realmConnectionCallback.success(splt(0), port, realms.head.name, realms.head.realmId, sessionKey)
+      }
+      //expectedDisconnect = true;
+      ctx.CloseAsync().Wait();
+    }
+
+    protected virtual IList<Realm> ParseRealmList(Packet packet)
+    {
+      var result = new List<Realm>();
+      packet.ByteBuf.ReadIntLE(); // unknown
+      var numRealms = packet.ByteBuf.ReadByte();
+      for (int i = 0; i < numRealms; i++)
+      {
+        var realmType = packet.ByteBuf.ReadByte(); // realm type (pvp/pve)
+        var realmLocked = packet.ByteBuf.ReadByte(); // Locked/Unlocked
+        var realmFlags = packet.ByteBuf.ReadByte(); // realm flags (offline/recommended/for newbs)
+
+        // On Vanilla MaNGOS, there is some string manipulation to insert the build information into the name itself
+        // if realm flags specify to do so. But that is counter-intuitive to matching the config, so let's remove it.
+        var name = (realmFlags & 0x04) == 0x04
+          ? Regex.Replace(packet.ByteBuf.ReadString(), " \\(\\d+,\\d+,\\d+\\)", "")
+          : packet.ByteBuf.ReadString();
+
+        var address = packet.ByteBuf.ReadString();
+        var population = packet.ByteBuf.ReadUnsignedInt(); // population
+        var characters = packet.ByteBuf.ReadByte(); // num of characters
+        var timeZone = packet.ByteBuf.ReadByte(); // timezone
+        var realmId = packet.ByteBuf.ReadByte();
+
+        var addressTokens = address.Split(':');
+        var host = addressTokens[0];
+        // some servers "overflow" the port on purpose to dissuade rudimentary bots
+        var port = addressTokens.Length > 1 ? int.Parse(addressTokens[1]) & 0xFFFF : 8085;
+
+        result.Add(new Realm()
+        {
+          Type = realmType,
+          Locked = realmLocked,
+          Flags = realmFlags,
+          Name = name,
+          Host = host,
+          Port = port,
+          Population = population,
+          Characters = characters,
+          TimeZone = timeZone,
+          RealmId = realmId,
+        }); ;
+      }
+
+      return result;
     }
   }
 }

@@ -1,13 +1,13 @@
 ﻿namespace WoWChat.Net.Realm
 {
+  using Common;
   using DotNetty.Handlers.Timeout;
   using DotNetty.Transport.Channels;
   using DotNetty.Transport.Channels.Sockets;
   using Microsoft.Extensions.Logging;
   using Microsoft.Extensions.Options;
-  using System;
-  using Common;
   using Options;
+  using System;
 
   public class RealmChannelHandler : ChannelInitializer<TcpSocketChannel>
   {

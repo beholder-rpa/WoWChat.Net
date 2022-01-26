@@ -1,15 +1,15 @@
 ﻿namespace WoWChat.Net.Realm;
 
+using Common;
+using DotNetty.Buffers;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Net.Sockets;
-using System.Threading.Tasks;
-using Common;
 using Options;
+using System;
+using System.Threading.Tasks;
 
 public class RealmConnector : IConnector
 {
@@ -42,6 +42,7 @@ public class RealmConnector : IConnector
       .Channel<TcpSocketChannel>()
       .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(_options.ConnectTimeoutMs))
       .Option(ChannelOption.SoKeepalive, true)
+      .Option(ChannelOption.Allocator, UnpooledByteBufferAllocator.Default)
       .RemoteAddress(_options.RealmListHost, _options.RealmListPort)
       .Handler(_realmChannelHandler);
 

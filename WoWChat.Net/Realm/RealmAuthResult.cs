@@ -1,6 +1,6 @@
 ﻿namespace WoWChat.Net.Realm;
 
-enum RealmAuthResult : byte
+public enum RealmAuthResult : byte
 {
   WOW_SUCCESS = 0,
   WOW_FAILURE = 0x01,

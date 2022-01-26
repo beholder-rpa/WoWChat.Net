@@ -27,7 +27,7 @@
     /// <summary>
     /// Gets or sets the bot's WoW game account password, or set the WoWChat__AccountName environment variable.
     /// </summary>
-    public string Password { get; set; } = string.Empty;
+    public string AccountPassword { get; set; } = string.Empty;
 
     public Platform Platform { get; set; } = Platform.Windows;
 

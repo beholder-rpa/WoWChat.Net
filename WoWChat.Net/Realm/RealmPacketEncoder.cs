@@ -1,11 +1,12 @@
 ﻿namespace WoWChat.Net.Realm
 {
+  using Common;
   using DotNetty.Buffers;
   using DotNetty.Codecs;
   using DotNetty.Transport.Channels;
+  using Extensions;
   using Microsoft.Extensions.Logging;
   using System;
-  using Common;
 
   public class RealmPacketEncoder : MessageToByteEncoder<Packet>
   {
@@ -18,11 +19,11 @@
 
     protected override void Encode(IChannelHandlerContext context, Packet message, IByteBuffer output)
     {
-      _logger.LogDebug($"SEND REALM PACKET: {message.CommandId} - {message.ByteBuf:X2}");
+      _logger.LogDebug("SEND REALM PACKET: {id} - {byteBuf}", message.Id, BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
 
-      output.WriteByte(message.CommandId);
+      output.WriteByte(message.Id);
       output.WriteBytes(message.ByteBuf);
-      message.Dispose();
+      message.ByteBuf.Release();
     }
   }
 }
