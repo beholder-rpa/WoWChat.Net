@@ -9,7 +9,7 @@
   using Options;
   using System;
 
-  public class RealmChannelHandler : ChannelInitializer<TcpSocketChannel>
+  public class RealmChannelInitializer : ChannelInitializer<TcpSocketChannel>
   {
     private readonly RealmPacketHandler _realmPacketHandler;
     private readonly RealmPacketDecoder _realmPacketDecoder;
@@ -17,15 +17,15 @@
     private readonly IdleStateCallback _idleStateCallback;
 
     protected readonly WowChatOptions _options;
-    protected readonly ILogger<RealmChannelHandler> _logger;
+    protected readonly ILogger<RealmChannelInitializer> _logger;
 
-    public RealmChannelHandler(
+    public RealmChannelInitializer(
       RealmPacketHandler realmPacketHandler,
       RealmPacketDecoder realmPacketDecoder,
       RealmPacketEncoder realmPacketEncoder,
       IdleStateCallback idleStateCallback,
       IOptions<WowChatOptions> options,
-      ILogger<RealmChannelHandler> logger
+      ILogger<RealmChannelInitializer> logger
       )
     {
       _realmPacketHandler = realmPacketHandler ?? throw new ArgumentNullException(nameof(realmPacketHandler));

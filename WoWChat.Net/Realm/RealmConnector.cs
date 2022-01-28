@@ -1,6 +1,4 @@
 ﻿namespace WoWChat.Net.Realm;
-
-using Common;
 using DotNetty.Buffers;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
@@ -13,18 +11,18 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
-public class RealmConnector : IConnector, IObservable<RealmEvent>
+public class RealmConnector : IObservable<RealmEvent>
 {
-  private readonly RealmChannelHandler _realmChannelHandler;
+  private readonly RealmChannelInitializer _channelInitializer;
   private readonly IEventLoopGroup _group;
   private readonly WowChatOptions _options;
   private readonly ILogger<RealmConnector> _logger;
 
   private IChannel? _realmChannel;
 
-  public RealmConnector(RealmChannelHandler realmChannelHandler, IEventLoopGroup group, IOptions<WowChatOptions> options, ILogger<RealmConnector> logger)
+  public RealmConnector(RealmChannelInitializer realmChannelInitializer, IEventLoopGroup group, IOptions<WowChatOptions> options, ILogger<RealmConnector> logger)
   {
-    _realmChannelHandler = realmChannelHandler ?? throw new ArgumentNullException(nameof(realmChannelHandler));
+    _channelInitializer = realmChannelInitializer ?? throw new ArgumentNullException(nameof(realmChannelInitializer));
     _group = group ?? throw new ArgumentNullException(nameof(group));
     _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -37,7 +35,11 @@ public class RealmConnector : IConnector, IObservable<RealmEvent>
       throw new InvalidOperationException($"Refusing to connect to realm server. Already connected.");
     }
 
-    _logger.LogInformation("Connecting to game server {realmName} ({host}:{port})", _options.RealmName, _options.RealmListHost, _options.RealmListPort);
+    OnRealmEvent(new RealmConnectingEvent()
+    {
+      Host = _options.RealmListHost,
+      Port = _options.RealmListPort,
+    });
 
     var bootstrap = new Bootstrap();
     bootstrap.Group(_group)
@@ -46,7 +48,7 @@ public class RealmConnector : IConnector, IObservable<RealmEvent>
       .Option(ChannelOption.SoKeepalive, true)
       .Option(ChannelOption.Allocator, UnpooledByteBufferAllocator.Default)
       .RemoteAddress(_options.RealmListHost, _options.RealmListPort)
-      .Handler(_realmChannelHandler);
+      .Handler(_channelInitializer);
 
     try
     {
@@ -64,7 +66,11 @@ public class RealmConnector : IConnector, IObservable<RealmEvent>
       }
 
       _realmChannel = connectTask.Result;
-      OnRealmEvent(new RealmConnectedEvent());
+      OnRealmEvent(new RealmConnectedEvent(){
+        Name = _options.RealmName,
+        Host = _options.RealmListHost,
+        Port = _options.RealmListPort
+      });
     }
     catch (Exception ex)
     {
@@ -74,6 +80,16 @@ public class RealmConnector : IConnector, IObservable<RealmEvent>
         Reason = $"Failed to connect to realm server! {ex.Message}"
       });
     }
+  }
+
+  public async Task Disconnect()
+  {
+    if (_group.IsShuttingDown || _group.IsShutdown || _group.IsTerminated || _realmChannel == null)
+    {
+      return;
+    }
+
+    await _realmChannel.CloseAsync();
   }
 
   #region IObservable<RealmEvent>

@@ -1,59 +1,89 @@
 ﻿namespace WoWChat.Net.Game;
 
+using DotNetty.Buffers;
+using DotNetty.Transport.Bootstrapping;
+using DotNetty.Transport.Channels;
+using DotNetty.Transport.Channels.Sockets;
+using Events;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Networking;
 using Options;
-using System.Net.Sockets;
+using System.Collections.Concurrent;
 
-public class GameConnector
+public class GameConnector : IObservable<GameEvent>
 {
-  private readonly WowChatOptions _gameOptions;
+  private readonly GameChannelInitializer _channelInitializer;
+  private readonly IEventLoopGroup _group;
+  private readonly WowChatOptions _options;
   private readonly ILogger<GameConnector> _logger;
-  private readonly TcpClient _tcpClient;
 
-  private readonly IGamePacketEncoder _gamePacketEncoder;
-  private readonly IGamePacketDecoder _gamePacketDecoder;
-  private readonly IGameHeaderCrypt _gameHeaderCrypt;
+  private IChannel? _gameChannel;
 
   public GameConnector(
-    IGamePacketEncoder gamePacketEncoder,
-    IGamePacketDecoder gamePacketDecoder,
-    IGameHeaderCrypt gameHeaderCrypt,
-    IOptions<WowChatOptions> gameOptions,
-    ILogger<GameConnector> logger,
-    string realmServer
+    GameChannelInitializer gameChannelInitializer,
+    IEventLoopGroup group,
+    IOptions<WowChatOptions> options,
+    ILogger<GameConnector> logger
     )
   {
-    _gameOptions = gameOptions?.Value ?? throw new ArgumentNullException(nameof(gameOptions));
+    _channelInitializer = gameChannelInitializer ?? throw new ArgumentNullException(nameof(gameChannelInitializer));
+    _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+    _group = group ?? throw new ArgumentNullException(nameof(group));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    _tcpClient = new TcpClient(realmServer, _gameOptions.RealmListPort);
-
-    _gamePacketEncoder = gamePacketEncoder;
-    _gamePacketDecoder = gamePacketDecoder;
-    _gameHeaderCrypt = gameHeaderCrypt;
   }
 
-  public async Task Connect()
+  public async Task Connect(string gameServerHost, int gameServerPort)
   {
-    if (_tcpClient.Connected)
+    if (_gameChannel != null && _gameChannel.Active)
     {
       throw new InvalidOperationException("Refusing to connect to game server. Already connected.");
     }
 
-    _logger.LogInformation("Connecting to game server {realmName} ({host}:{port})", _gameOptions.RealmName, _gameOptions.RealmListHost, _gameOptions.RealmListPort);
-
-    var cancelTask = Task.Delay(_gameOptions.ConnectTimeoutMs);
-    var connectTask = _tcpClient.ConnectAsync(_gameOptions.RealmListHost, _gameOptions.RealmListPort);
-
-    //double await so if cancelTask throws exception, this throws it
-    await await Task.WhenAny(connectTask, cancelTask);
-
-    if (cancelTask.IsCompleted)
+    OnGameEvent(new GameConnectingEvent()
     {
-      //If cancelTask and connectTask both finish at the same time,
-      //we'll consider it to be a timeout. 
-      throw new TimeoutException("Failed to connect to game server! Connection Timeout");
+      Host = _options.RealmListHost,
+      Port = _options.RealmListPort,
+    });
+
+    var bootstrap = new Bootstrap();
+    bootstrap.Group(_group)
+      .Channel<TcpSocketChannel>()
+      .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(_options.ConnectTimeoutMs))
+      .Option(ChannelOption.SoKeepalive, true)
+      .Option(ChannelOption.Allocator, UnpooledByteBufferAllocator.Default)
+      .RemoteAddress(_options.RealmListHost, _options.RealmListPort)
+      .Handler(_channelInitializer);
+
+    try
+    {
+      var cancelTask = Task.Delay(_options.ConnectTimeoutMs);
+      var connectTask = bootstrap.ConnectAsync();
+
+      //double await so if cancelTask throws exception, this throws it
+      await await Task.WhenAny(connectTask, cancelTask);
+
+      if (cancelTask.IsCompleted)
+      {
+        //If cancelTask and connectTask both finish at the same time,
+        //we'll consider it to be a timeout.
+        throw new TimeoutException();
+      }
+
+      _gameChannel = connectTask.Result;
+      OnGameEvent(new GameConnectedEvent()
+      {
+        Name = _options.RealmName,
+        Host = gameServerHost,
+        Port = gameServerPort
+      });
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError("Failed to connect to game server! {message}", ex.Message);
+      OnGameEvent(new GameDisconnectedEvent()
+      {
+        Reason = $"Failed to connect to game server! {ex.Message}"
+      });
     }
   }
 
@@ -62,8 +92,51 @@ public class GameConnector
     return Task.CompletedTask;
   }
 
-  private void OnDisconnect()
-  {
+  #region IObservable<GameEvent>
+  private readonly ConcurrentDictionary<IObserver<GameEvent>, GameEventUnsubscriber> _observers = new ConcurrentDictionary<IObserver<GameEvent>, GameEventUnsubscriber>();
 
+  IDisposable IObservable<GameEvent>.Subscribe(IObserver<GameEvent> observer)
+  {
+    return _observers.GetOrAdd(observer, new GameEventUnsubscriber(this, observer));
   }
+
+  /// <summary>
+  /// Produces Game Events
+  /// </summary>
+  /// <param name="gameEvent"></param>
+  private void OnGameEvent(GameEvent gameEvent)
+  {
+    Parallel.ForEach(_observers.Keys, (observer) =>
+    {
+      try
+      {
+        observer.OnNext(gameEvent);
+      }
+      catch (Exception)
+      {
+        // Do Nothing.
+      }
+    });
+  }
+
+  private sealed class GameEventUnsubscriber : IDisposable
+  {
+    private readonly GameConnector _parent;
+    private readonly IObserver<GameEvent> _observer;
+
+    public GameEventUnsubscriber(GameConnector parent, IObserver<GameEvent> observer)
+    {
+      _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+      _observer = observer ?? throw new ArgumentNullException(nameof(observer));
+    }
+
+    public void Dispose()
+    {
+      if (_observer != null && _parent._observers.ContainsKey(_observer))
+      {
+        _parent._observers.TryRemove(_observer, out _);
+      }
+    }
+  }
+  #endregion
 }

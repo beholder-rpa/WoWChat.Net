@@ -1,6 +1,6 @@
 ﻿namespace WoWChat.Net.Realm.Events
 {
-  public record RealmConnectedEvent : RealmEvent
+  public record RealmConnectingEvent : RealmEvent
   {
     public string Name { get; init; } = string.Empty;
 
