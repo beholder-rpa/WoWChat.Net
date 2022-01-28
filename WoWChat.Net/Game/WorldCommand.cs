@@ -32,8 +32,4 @@ public class WorldCommand
   public static uint CMSG_WARDEN_DATA = 0x02E7;
 
   public static uint SMSG_INVALIDATE_PLAYER = 0x031C;
-
-  // tbc/wotlk only
-  public static uint SMSG_TIME_SYNC_REQ = 0x0390;
-  public static uint CMSG_TIME_SYNC_RESP = 0x0391;
 }

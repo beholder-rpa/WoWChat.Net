@@ -26,7 +26,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
       var config = context.Configuration;
 
-      services.AddWowChat(config);
+      services.AddWoWChat(config);
       services.AddHostedService<Worker>();
     })
     .Build();

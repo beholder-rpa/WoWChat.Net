@@ -10,7 +10,13 @@ using WoWChat.Net.Realm;
 
 public static class IServiceCollectionExtensions
 {
-  public static void AddWowChat(this IServiceCollection services, IConfiguration config)
+  /// <summary>
+  /// Add a WoWChat registration with the given configuration.
+  /// </summary>
+  /// <param name="services"></param>
+  /// <param name="config"></param>
+  /// <exception cref="NotImplementedException"></exception>
+  public static void AddWoWChat(this IServiceCollection services, IConfiguration config)
   {
     // Config
     var wowChatOptions = config.GetSection("WoWChat").Get<WowChatOptions>();
@@ -57,11 +63,11 @@ public static class IServiceCollectionExtensions
     switch (wowChatOptions.GetExpansion())
     {
       case WoWExpansion.Vanilla:
-        //socketChannel.attr(CRYPT).set(new GameHeaderCrypt)
+        services.AddSingleton<GameHeaderCrypt, GameHeaderCrypt>();
         services.AddSingleton<GamePacketHandler, GamePacketHandler>();
         break;
       case WoWExpansion.TBC:
-        //socketChannel.attr(CRYPT).set(new GameHeaderCryptTBC)
+        services.AddSingleton<GameHeaderCrypt, GameHeaderCryptTBC>();
         services.AddSingleton<GamePacketHandler, GamePacketHandlerTBC>();
         break;
       case WoWExpansion.WotLK:

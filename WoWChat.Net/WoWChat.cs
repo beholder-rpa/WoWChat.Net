@@ -51,24 +51,15 @@
       await _realmConnector.Connect();
     }
 
+    #region IObserver<RealmEvent>
     void IObserver<RealmEvent>.OnCompleted()
     {
       _logger.LogInformation("RealmEvent Observable Completed.");
     }
 
-    void IObserver<GameEvent>.OnCompleted()
-    {
-      throw new NotImplementedException();
-    }
-
     void IObserver<RealmEvent>.OnError(Exception error)
     {
       _logger.LogError("An unexpected error occurred: {message}", error.Message);
-    }
-
-    void IObserver<GameEvent>.OnError(Exception error)
-    {
-      throw new NotImplementedException();
     }
 
     void IObserver<RealmEvent>.OnNext(RealmEvent value)
@@ -126,6 +117,18 @@
           break;
       }
     }
+    #endregion
+
+    #region IObserver<GameEvent>
+    void IObserver<GameEvent>.OnCompleted()
+    {
+      throw new NotImplementedException();
+    }
+
+    void IObserver<GameEvent>.OnError(Exception error)
+    {
+      throw new NotImplementedException();
+    }
 
     void IObserver<GameEvent>.OnNext(GameEvent value)
     {
@@ -136,5 +139,6 @@
           break;
       }
     }
+    #endregion
   }
 }
