@@ -6,7 +6,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureAppConfiguration(app =>
     {
       var envVarSource = app.Sources.OfType<EnvironmentVariablesConfigurationSource>().FirstOrDefault();
-      if (envVarSource != null)
+      if ( envVarSource != null)
       {
         var envVarSourceIx = app.Sources.IndexOf(envVarSource);
         app.Sources.Insert(envVarSourceIx, new JsonConfigurationSource()
@@ -20,7 +20,7 @@ IHost host = Host.CreateDefaultBuilder(args)
       {
         app.AddJsonFile("appsettings.local.json", true, true);
       }
-
+      
     })
     .ConfigureServices((context, services) =>
     {

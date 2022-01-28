@@ -37,6 +37,8 @@
 
     public int ConnectTimeoutMs { get; set; } = 10000;
 
+    public int ReconnectDelayMs { get; set; } = 10000;
+
     public int ReceiveTimeoutMs { get; set; } = 10000;
 
     public int SendTimeoutMs { get; set; } = 10000;

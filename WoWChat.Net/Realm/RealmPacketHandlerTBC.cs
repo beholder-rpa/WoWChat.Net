@@ -9,8 +9,8 @@
 
   public class RealmPacketHandlerTBC : RealmPacketHandler
   {
-    public RealmPacketHandlerTBC(WoWChatGlobalState global, IOptions<WowChatOptions> options, ILogger<RealmPacketHandler> logger)
-      : base(global, options, logger)
+    public RealmPacketHandlerTBC(IOptions<WowChatOptions> options, ILogger<RealmPacketHandler> logger)
+      : base(options, logger)
     {
     }
 

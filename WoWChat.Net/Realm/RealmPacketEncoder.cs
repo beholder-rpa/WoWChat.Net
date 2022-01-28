@@ -4,9 +4,9 @@
   using DotNetty.Buffers;
   using DotNetty.Codecs;
   using DotNetty.Transport.Channels;
-  using Extensions;
   using Microsoft.Extensions.Logging;
   using System;
+  using Extensions;
 
   public class RealmPacketEncoder : MessageToByteEncoder<Packet>
   {

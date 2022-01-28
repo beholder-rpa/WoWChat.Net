@@ -5,13 +5,15 @@ using DotNetty.Buffers;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
+using Events;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Options;
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
-public class RealmConnector : IConnector
+public class RealmConnector : IConnector, IObservable<RealmEvent>
 {
   private readonly RealmChannelHandler _realmChannelHandler;
   private readonly IEventLoopGroup _group;
@@ -57,16 +59,68 @@ public class RealmConnector : IConnector
       if (cancelTask.IsCompleted)
       {
         //If cancelTask and connectTask both finish at the same time,
-        //we'll consider it to be a timeout. 
+        //we'll consider it to be a timeout.
         throw new TimeoutException();
       }
 
       _realmChannel = connectTask.Result;
+      OnRealmEvent(new RealmConnectedEvent());
     }
     catch (Exception ex)
     {
       _logger.LogError("Failed to connect to realm server! {message}", ex.Message);
-      //realmConnectionCallback.OnDisconnected();
+      OnRealmEvent(new RealmDisconnectedEvent()
+      {
+        Reason = $"Failed to connect to realm server! {ex.Message}"
+      });
     }
   }
+
+  #region IObservable<RealmEvent>
+  private readonly ConcurrentDictionary<IObserver<RealmEvent>, RealmEventUnsubscriber> _observers = new ConcurrentDictionary<IObserver<RealmEvent>, RealmEventUnsubscriber>();
+
+  IDisposable IObservable<RealmEvent>.Subscribe(IObserver<RealmEvent> observer)
+  {
+    return _observers.GetOrAdd(observer, new RealmEventUnsubscriber(this, observer));
+  }
+
+  /// <summary>
+  /// Produces Realm Events
+  /// </summary>
+  /// <param name="realmEvent"></param>
+  private void OnRealmEvent(RealmEvent realmEvent)
+  {
+    Parallel.ForEach(_observers.Keys, (observer) =>
+    {
+      try
+      {
+        observer.OnNext(realmEvent);
+      }
+      catch (Exception)
+      {
+        // Do Nothing.
+      }
+    });
+  }
+
+  private sealed class RealmEventUnsubscriber : IDisposable
+  {
+    private readonly RealmConnector _parent;
+    private readonly IObserver<RealmEvent> _observer;
+
+    public RealmEventUnsubscriber(RealmConnector parent, IObserver<RealmEvent> observer)
+    {
+      _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+      _observer = observer ?? throw new ArgumentNullException(nameof(observer));
+    }
+
+    public void Dispose()
+    {
+      if (_observer != null && _parent._observers.ContainsKey(_observer))
+      {
+        _parent._observers.TryRemove(_observer, out _);
+      }
+    }
+  }
+  #endregion
 }

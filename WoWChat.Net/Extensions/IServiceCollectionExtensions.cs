@@ -6,6 +6,7 @@ using WoWChat.Net;
 using WoWChat.Net.Common;
 using WoWChat.Net.Options;
 using WoWChat.Net.Realm;
+using WoWChat.Net.Realm.Events;
 
 public static class IServiceCollectionExtensions
 {
@@ -29,6 +30,7 @@ public static class IServiceCollectionExtensions
     {
       services.AddSingleton<RealmPacketHandler, RealmPacketHandlerTBC>();
     }
+
     services.AddSingleton<RealmPacketDecoder>();
     services.AddSingleton<RealmPacketEncoder>();
     services.AddSingleton<RealmChannelHandler>();
@@ -38,7 +40,6 @@ public static class IServiceCollectionExtensions
     // TODO...
 
     // WoWChat
-    services.AddSingleton<WoWChatGlobalState>();
     services.AddSingleton<IWoWChat, WoWChat>();
   }
 }
