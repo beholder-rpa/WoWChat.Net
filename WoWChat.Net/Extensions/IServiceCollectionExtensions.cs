@@ -71,7 +71,7 @@ public static class IServiceCollectionExtensions
         services.AddSingleton<GamePacketHandler, GamePacketHandlerTBC>();
         break;
       case WoWExpansion.WotLK:
-        //socketChannel.attr(CRYPT).set(new GameHeaderCryptWotLK)
+        services.AddSingleton<GameHeaderCrypt, GameHeaderCryptWotLK>();
         services.AddSingleton<GamePacketHandler, GamePacketHandlerWotLK>();
         break;
       case WoWExpansion.Cataclysm:
