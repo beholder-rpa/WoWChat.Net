@@ -20,7 +20,7 @@
     private int _size = 0;
     private byte _id = 0;
 
-    public RealmPacketDecoder(IOptions<WowChatOptions> options, ILogger<RealmPacketDecoder> logger)
+    public RealmPacketDecoder(IOptionsSnapshot<WowChatOptions> options, ILogger<RealmPacketDecoder> logger)
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -40,7 +40,7 @@
 
         switch (_id)
         {
-          case (byte)RealmAuthCommand.CMD_AUTH_LOGON_CHALLENGE:
+          case (byte)RealmCommand.CMD_AUTH_LOGON_CHALLENGE:
             if (input.ReadableBytes < 2)
             {
               input.ResetReaderIndex();
@@ -59,7 +59,7 @@
             }
             input.ResetReaderIndex();
             break;
-          case (byte)RealmAuthCommand.CMD_AUTH_LOGON_PROOF:
+          case (byte)RealmCommand.CMD_AUTH_LOGON_PROOF:
             if (input.ReadableBytes < 1)
             {
               input.ResetReaderIndex();
@@ -81,7 +81,7 @@
             }
             input.ResetReaderIndex();
             break;
-          case (byte)RealmAuthCommand.CMD_REALM_LIST:
+          case (byte)RealmCommand.CMD_REALM_LIST:
             if (input.ReadableBytes < 2)
             {
               input.ResetReaderIndex();

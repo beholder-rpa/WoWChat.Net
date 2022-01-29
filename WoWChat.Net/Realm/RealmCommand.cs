@@ -1,6 +1,6 @@
 ﻿namespace WoWChat.Net.Realm;
 
-public enum RealmAuthCommand : byte
+public enum RealmCommand : byte
 {
   CMD_AUTH_LOGON_CHALLENGE = 0x00,
   CMD_AUTH_LOGON_PROOF = 0x01,

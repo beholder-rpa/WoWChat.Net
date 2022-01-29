@@ -14,7 +14,7 @@
 
   public class GamePacketDecoderWotLK : GamePacketDecoder
   {
-    public GamePacketDecoderWotLK(IOptions<WowChatOptions> options, ILogger<GamePacketDecoder> logger)
+    public GamePacketDecoderWotLK(IOptionsSnapshot<WowChatOptions> options, ILogger<GamePacketDecoder> logger)
       : base(options, logger)
     {
     }

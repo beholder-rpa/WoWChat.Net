@@ -25,10 +25,10 @@
     private BigInteger _sessionKey;
 
     public WoWChat(
-      IOptions<WowChatOptions> options,
+      IOptionsSnapshot<WowChatOptions> options,
       IEventLoopGroup group,
       RealmConnector realmConnector,
-      RealmPacketHandler realmPacketHandler,
+      RealmPacketHandlerResolver realmPacketHandlerResolver,
       GameConnector gameConnector,
       GamePacketHandler gamePacketHandler,
       ILogger<WoWChat> logger)
@@ -36,7 +36,7 @@
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _group = group ?? throw new ArgumentNullException(nameof(group));
       _realmConnector = realmConnector ?? throw new ArgumentNullException(nameof(realmConnector));
-      _realmPacketHandler = realmPacketHandler ?? throw new ArgumentNullException(nameof(realmPacketHandler));
+      _realmPacketHandler = realmPacketHandlerResolver(_options.GetExpansion()) ?? throw new NotImplementedException($"Unable to locate a realm packet handler for expansion {_options.GetExpansion()}");
       _gameConnector = gameConnector ?? throw new ArgumentNullException(nameof(gameConnector));
       _gamePacketHandler = gamePacketHandler ?? throw new ArgumentNullException(nameof(gamePacketHandler));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -114,6 +114,9 @@
           break;
         case RealmErrorEvent errorEvent:
           _logger.LogInformation("Error: {message}", errorEvent.Message);
+          break;
+        default:
+          _logger.LogWarning("Error: Unhandled Realm Event: {eventType}", value.GetType());
           break;
       }
     }

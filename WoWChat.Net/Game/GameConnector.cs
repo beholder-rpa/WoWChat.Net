@@ -22,7 +22,7 @@ public class GameConnector : IObservable<GameEvent>
   public GameConnector(
     GameChannelInitializer gameChannelInitializer,
     IEventLoopGroup group,
-    IOptions<WowChatOptions> options,
+    IOptionsSnapshot<WowChatOptions> options,
     ILogger<GameConnector> logger
     )
   {

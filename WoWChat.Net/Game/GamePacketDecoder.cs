@@ -22,7 +22,7 @@
     private int _size = 0;
     private int _id = 0;
 
-    public GamePacketDecoder(IOptions<WowChatOptions> options, ILogger<GamePacketDecoder> logger)
+    public GamePacketDecoder(IOptionsSnapshot<WowChatOptions> options, ILogger<GamePacketDecoder> logger)
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));

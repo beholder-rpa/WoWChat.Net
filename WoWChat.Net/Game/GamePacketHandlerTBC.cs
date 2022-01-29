@@ -6,7 +6,7 @@
 
   public class GamePacketHandlerTBC : GamePacketHandler
   {
-    public GamePacketHandlerTBC(IOptions<WowChatOptions> options, ILogger<GamePacketHandler> logger)
+    public GamePacketHandlerTBC(IOptionsSnapshot<WowChatOptions> options, ILogger<GamePacketHandler> logger)
       : base(options, logger)
     {
     }

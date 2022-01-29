@@ -19,7 +19,7 @@
     protected readonly ILogger<GamePacketHandler> _logger;
 
 
-    public GamePacketHandler(IOptions<WowChatOptions> options, ILogger<GamePacketHandler> logger)
+    public GamePacketHandler(IOptionsSnapshot<WowChatOptions> options, ILogger<GamePacketHandler> logger)
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));

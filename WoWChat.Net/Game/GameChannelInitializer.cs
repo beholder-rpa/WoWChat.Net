@@ -24,7 +24,7 @@
       GamePacketDecoder gamePacketDecoder,
       GamePacketEncoder gamePacketEncoder,
       IdleStateCallback idleStateCallback,
-      IOptions<WowChatOptions> options,
+      IOptionsSnapshot<WowChatOptions> options,
       ILogger<GameChannelInitializer> logger
       )
     {

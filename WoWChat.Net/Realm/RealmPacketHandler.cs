@@ -23,7 +23,7 @@
 
     private bool _isExpectedDisconnect = false;
 
-    private IDictionary<(int, Platform), byte[]> _buildCrcHashes = new Dictionary<(int, Platform), byte[]> {
+    private readonly IDictionary<(int, Platform), byte[]> _buildCrcHashes = new Dictionary<(int, Platform), byte[]> {
       { (5875, Platform.Mac), new byte[] { 0x8D, 0x17, 0x3C, 0xC3, 0x81, 0x96, 0x1E, 0xEB, 0xAB, 0xF3, 0x36, 0xF5, 0xE6, 0x67, 0x5B, 0x10, 0x1B, 0xB5, 0x13, 0xE5 } },
       { (5875, Platform.Windows), new byte[] { 0x95, 0xED, 0xB2, 0x7C, 0x78, 0x23, 0xB3, 0x63, 0xCB, 0xDD, 0xAB, 0x56, 0xA3, 0x92, 0xE7, 0xCB, 0x73, 0xFC, 0xCA, 0x20 } },
       { (8606, Platform.Mac), new byte[] { 0xD8, 0xB0, 0xEC, 0xFE, 0x53, 0x4B, 0xC1, 0x13, 0x1E, 0x19, 0xBA, 0xD1, 0xD4, 0xC0, 0xE8, 0x13, 0xEE, 0xE4, 0x99, 0x4F } },
@@ -32,7 +32,7 @@
       { (12340, Platform.Windows), new byte[] { 0xCD, 0xCB, 0xBD, 0x51, 0x88, 0x31, 0x5E, 0x6B, 0x4D, 0x19, 0x44, 0x9D, 0x49, 0x2D, 0xBC, 0xFA, 0xF1, 0x56, 0xA3, 0x47 } }
     };
 
-    public RealmPacketHandler(IOptions<WowChatOptions> options, ILogger<RealmPacketHandler> logger)
+    public RealmPacketHandler(IOptionsSnapshot<WowChatOptions> options, ILogger<RealmPacketHandler> logger)
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -72,13 +72,13 @@
       {
         switch (packet.Id)
         {
-          case (int)RealmAuthCommand.CMD_AUTH_LOGON_CHALLENGE when _logonState == 0:
+          case (int)RealmCommand.CMD_AUTH_LOGON_CHALLENGE when _logonState == 0:
             HandleAuthLogonChallenge(context, packet);
             break;
-          case (int)RealmAuthCommand.CMD_AUTH_LOGON_PROOF when _logonState == 1:
+          case (int)RealmCommand.CMD_AUTH_LOGON_PROOF when _logonState == 1:
             HandleAuthLogonProof(context, packet);
             break;
-          case (int)RealmAuthCommand.CMD_REALM_LIST when _logonState == 2:
+          case (int)RealmCommand.CMD_REALM_LIST when _logonState == 2:
             HandleRealmList(context, packet);
             break;
           default:
@@ -132,7 +132,7 @@
       byteBuf.WriteByte(1);
       byteBuf.WriteByte((byte)username.Length);
       byteBuf.WriteAscii(username.ToUpperInvariant());
-      return new Packet((byte)RealmAuthCommand.CMD_AUTH_LOGON_CHALLENGE, byteBuf);
+      return new Packet((byte)RealmCommand.CMD_AUTH_LOGON_CHALLENGE, byteBuf);
     }
 
     protected virtual void HandleAuthLogonChallenge(IChannelHandlerContext ctx, Packet msg)
@@ -198,7 +198,7 @@
       byteBuf.WriteByte(0);
       byteBuf.WriteByte(0);
 
-      ctx.WriteAndFlushAsync(new Packet((byte)RealmAuthCommand.CMD_AUTH_LOGON_PROOF, byteBuf));
+      ctx.WriteAndFlushAsync(new Packet((byte)RealmCommand.CMD_AUTH_LOGON_PROOF, byteBuf));
     }
 
     protected virtual void HandleAuthLogonProof(IChannelHandlerContext ctx, Packet packet)
@@ -262,7 +262,7 @@
       // ask for realm list
       var ret = ctx.Allocator.Buffer(4, 4);
       ret.WriteIntLE(0);
-      ctx.WriteAndFlushAsync(new Packet((byte)RealmAuthCommand.CMD_REALM_LIST, ret));
+      ctx.WriteAndFlushAsync(new Packet((byte)RealmCommand.CMD_REALM_LIST, ret));
     }
 
     protected virtual void HandleRealmList(IChannelHandlerContext ctx, Packet packet)
@@ -330,7 +330,7 @@
     }
 
     #region IObservable<RealmEvent>
-    private readonly ConcurrentDictionary<IObserver<RealmEvent>, RealmEventUnsubscriber> _observers = new ConcurrentDictionary<IObserver<RealmEvent>, RealmEventUnsubscriber>();
+    private readonly ConcurrentDictionary<IObserver<RealmEvent>, RealmEventUnsubscriber> _observers = new();
 
     IDisposable IObservable<RealmEvent>.Subscribe(IObserver<RealmEvent> observer)
     {

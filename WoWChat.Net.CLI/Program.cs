@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Configuration.Json;
+using WoWChat.Net;
 using WoWChat.Net.CLI;
 
 IHost host = Host.CreateDefaultBuilder(args)
@@ -26,7 +27,8 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
       var config = context.Configuration;
 
-      services.AddWoWChat(config);
+      services.AddWoWChat(config.GetSection("WoWChat"));
+      services.AddWoWChat(config.GetSection("WoWChat1"));
       services.AddHostedService<Worker>();
     })
     .Build();

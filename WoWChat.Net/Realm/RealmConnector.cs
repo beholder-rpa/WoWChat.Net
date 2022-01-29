@@ -20,7 +20,7 @@ public class RealmConnector : IObservable<RealmEvent>
 
   private IChannel? _realmChannel;
 
-  public RealmConnector(RealmChannelInitializer realmChannelInitializer, IEventLoopGroup group, IOptions<WowChatOptions> options, ILogger<RealmConnector> logger)
+  public RealmConnector(RealmChannelInitializer realmChannelInitializer, IEventLoopGroup group, IOptionsSnapshot<WowChatOptions> options, ILogger<RealmConnector> logger)
   {
     _channelInitializer = realmChannelInitializer ?? throw new ArgumentNullException(nameof(realmChannelInitializer));
     _group = group ?? throw new ArgumentNullException(nameof(group));
