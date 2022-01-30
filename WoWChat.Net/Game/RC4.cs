@@ -11,8 +11,7 @@
 
     public RC4(byte[] key)
     {
-      _state = new byte[STATE_LENGTH];
-      SetupKey(_state, key);
+      _state = SetupKey(key);
     }
 
     public byte[] Crypt(byte[] msg)
@@ -21,7 +20,7 @@
       for (int n = 0; n < msg.Length; n++)
       {
         _i = (_i + 1) % STATE_LENGTH;
-        _j = (_j + _state[_i]) & STATE_LENGTH;
+        _j = (_j + _state[_i]) % STATE_LENGTH;
         Swap(_state, _i, _j);
         var rand = _state[(_state[_i] + _state[_j]) % STATE_LENGTH];
         code[n] = (byte)(rand ^ msg[n]);
@@ -29,26 +28,22 @@
       return code;
     }
 
-    private static void SetupKey(byte[] state, byte[] key)
+    private static byte[] SetupKey(byte[] key)
     {
-      byte index1 = 0;
-      byte index2 = 0;
+      var state = new byte[STATE_LENGTH];
 
-      for (int counter = 0; counter < STATE_LENGTH; counter++)
+      for (int i = 0; i < STATE_LENGTH; i++)
       {
-        state[counter] = (byte)counter;
+        state[i] = (byte)i;
       }
 
-      for (int counter = 0; counter < STATE_LENGTH; counter++)
+      var j = 0;
+      for (int i = 0; i < STATE_LENGTH; i++)
       {
-        index2 = (byte)(key[index1] + state[counter] + index2);
-        Swap(state, counter, index2);
-        // swap byte
-        byte tmp = state[counter];
-        state[counter] = state[index2];
-        state[index2] = tmp;
-        index1 = (byte)((index1 + 1) % key.Length);
+        j = (j + state[i] + key[i % key.Length] + STATE_LENGTH) % STATE_LENGTH;
+        Swap(state, i, j);
       }
+      return state;
     }
 
     private static void Swap(byte[] state, int i, int j)

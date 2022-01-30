@@ -1,12 +1,14 @@
 ﻿namespace WoWChat.Net.Game
 {
   using DotNetty.Buffers;
+  using Options;
   using Microsoft.Extensions.Logging;
+  using Microsoft.Extensions.Options;
 
   public class GamePacketDecoderWotLK : GamePacketDecoder
   {
-    public GamePacketDecoderWotLK(GameHeaderCryptWotLK crypt, ILogger<GamePacketDecoderWotLK> logger)
-      : base(crypt, logger)
+    public GamePacketDecoderWotLK(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketDecoderWotLK> logger)
+      : base(options, cryptResolver, logger)
     {
     }
 

@@ -48,9 +48,9 @@
       _serverCrypt.Crypt(new byte[1024]);
 
       using HMACSHA1 clientHmac = new HMACSHA1(ClientHmacSeed);
-      var clientKey = serverHmac.ComputeHash(sessionKey);
+      var clientKey = clientHmac.ComputeHash(sessionKey);
       _clientCrypt = new RC4(clientKey);
-      _serverCrypt.Crypt(new byte[1024]);
+      _clientCrypt.Crypt(new byte[1024]);
 
       IsInitialized = true;
     }

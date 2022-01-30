@@ -2,15 +2,17 @@
 {
   using DotNetty.Buffers;
   using DotNetty.Transport.Channels;
+  using Options;
   using Microsoft.Extensions.Logging;
+  using Microsoft.Extensions.Options;
   using System.IO.Compression;
 
   public class GamePacketDecoderCataclysm : GamePacketDecoderWotLK
   {
     protected static int COMPRESSED_DATA_MASK = 0x8000;
 
-    public GamePacketDecoderCataclysm(GameHeaderCryptWotLK crypt, ILogger<GamePacketDecoderWotLK> logger)
-      : base(crypt, logger)
+    public GamePacketDecoderCataclysm(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketDecoderWotLK> logger)
+      : base(options, cryptResolver, logger)
     {
     }
 

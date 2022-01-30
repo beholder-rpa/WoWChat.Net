@@ -5,7 +5,9 @@
   using DotNetty.Codecs;
   using DotNetty.Transport.Channels;
   using Extensions;
+  using Options;
   using Microsoft.Extensions.Logging;
+  using Microsoft.Extensions.Options;
   using System;
   using System.Collections.Generic;
 
@@ -19,9 +21,10 @@
     private int _size = 0;
     private int _id = 0;
 
-    public GamePacketDecoder(GameHeaderCrypt crypt, ILogger<GamePacketDecoder> logger)
+    public GamePacketDecoder(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketDecoder> logger)
     {
-      _crypt = crypt ?? throw new ArgumentNullException(nameof(crypt));
+      var localOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
+      _crypt = cryptResolver(localOptions.GetExpansion()) ?? throw new ArgumentNullException(nameof(cryptResolver));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 

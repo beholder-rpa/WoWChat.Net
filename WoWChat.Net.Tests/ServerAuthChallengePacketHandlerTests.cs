@@ -26,9 +26,10 @@ public class ServerAuthChallengePacketHandlerTests
       AccountName = "overhill"
     });
     var loggerMock = new Mock<ILogger<ServerAuthChallengePacketHandlerWotLK>>();
-    var headerCrypt = new GameHeaderCryptWotLK();
 
-    var packetHandler = new ServerAuthChallengePacketHandlerWotLK(headerCrypt, wowChatOptionsSnapshot.Object, loggerMock.Object);
+    static GameHeaderCrypt headerCryptResolver(WoWExpansion exp) => new GameHeaderCryptWotLK();
+
+    var packetHandler = new ServerAuthChallengePacketHandlerWotLK(wowChatOptionsSnapshot.Object, headerCryptResolver, loggerMock.Object);
     var contextMock = new Mock<IChannelHandlerContext>(MockBehavior.Strict);
     contextMock.Setup(x => x.Allocator).Returns(UnpooledByteBufferAllocator.Default);
     Packet? observedPacket = null;

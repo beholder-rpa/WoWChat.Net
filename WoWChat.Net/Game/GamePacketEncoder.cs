@@ -5,16 +5,19 @@ using DotNetty.Buffers;
 using DotNetty.Codecs;
 using DotNetty.Transport.Channels;
 using Extensions;
+using Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 public class GamePacketEncoder : MessageToByteEncoder<Packet>
 {
   protected readonly GameHeaderCrypt _crypt;
   protected readonly ILogger<GamePacketEncoder> _logger;
 
-  public GamePacketEncoder(GameHeaderCrypt crypt, ILogger<GamePacketEncoder> logger)
+  public GamePacketEncoder(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketEncoder> logger)
   {
-    _crypt = crypt ?? throw new ArgumentNullException(nameof(crypt));
+    var localOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
+    _crypt = cryptResolver(localOptions.GetExpansion());
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
@@ -26,7 +29,7 @@ public class GamePacketEncoder : MessageToByteEncoder<Packet>
 
     using var ms = new MemoryStream(headerSize);
     ms.Write((message.ByteBuf.WriterIndex + headerSize - 2).ToBytesShort());
-    ms.Write(message.Id.ToBytesShort());
+    ms.Write(message.Id.ToBytesShortLE());
 
     byte[] header;
     if (isUnencrypted)
@@ -40,6 +43,7 @@ public class GamePacketEncoder : MessageToByteEncoder<Packet>
       header = _crypt.Encrypt(ms.ToArray());
     }
 
+    _logger.LogDebug("SEND GAME PACKET HEADER: {header}", BitConverter.ToString(header));
     _logger.LogDebug("SEND GAME PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
 
     output.WriteBytes(header);

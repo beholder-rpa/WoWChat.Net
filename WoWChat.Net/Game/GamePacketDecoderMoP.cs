@@ -1,14 +1,16 @@
 ﻿namespace WoWChat.Net.Game
 {
   using DotNetty.Buffers;
+  using Options;
   using Microsoft.Extensions.Logging;
+  using Microsoft.Extensions.Options;
 
   public class GamePacketDecoderMoP : GamePacketDecoderCataclysm
   {
     protected static int SMSG_COMPRESSED_DATA = 0x1568;
 
-    public GamePacketDecoderMoP(GameHeaderCryptMoP crypt, ILogger<GamePacketDecoderMoP> logger)
-      : base(crypt, logger)
+    public GamePacketDecoderMoP(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketDecoderMoP> logger)
+      : base(options, cryptResolver, logger)
     {
     }
 

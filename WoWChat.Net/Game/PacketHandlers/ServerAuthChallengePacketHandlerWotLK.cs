@@ -4,6 +4,7 @@ using Common;
 using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
 using Extensions;
+using global::WoWChat.Net.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
@@ -30,16 +31,16 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
       0x1C, 0x3E, 0x9E, 0xE1, 0x93, 0xC8, 0x8D
     };
 
-  public ServerAuthChallengePacketHandlerWotLK(GameHeaderCrypt headerCrypt, IOptionsSnapshot<Net.Options.WowChatOptions> options, ILogger<ServerAuthChallengePacketHandler> logger) : base(headerCrypt, options, logger)
+  public ServerAuthChallengePacketHandlerWotLK(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver headerCryptResolver, ILogger<ServerAuthChallengePacketHandler> logger)
+    : base(options, headerCryptResolver, logger)
   {
   }
 
-  protected override (byte[] sessionKey, IByteBuffer byteBuf) ParseServerAuthChallenge(IChannelHandlerContext ctx, Packet msg)
+  protected override IByteBuffer ParseServerAuthChallenge(IChannelHandlerContext ctx, Packet msg)
   {
     if (Realm == null)
     {
       throw new InvalidOperationException("Realm has not been set.");
-
     }
     if (SessionKey == null)
     {
@@ -83,6 +84,6 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
     output.WriteBytes(hash);
 
     output.WriteBytes(_addonInfo);
-    return (SessionKey, output);
+    return output;
   }
 }

@@ -1,6 +1,7 @@
 ﻿namespace WoWChat.Net.Game.PacketHandlers;
 
 using Common;
+using global::WoWChat.Net.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,7 +22,8 @@ public class ServerAuthChallengePacketHandlerTBC : ServerAuthChallengePacketHand
       0x98, 0x18, 0xC5, 0x36, 0xCA, 0xE8, 0x81, 0x61, 0x42, 0xF9, 0xEB, 0x07, 0x63, 0xAB, 0x8B, 0xEC
     };
 
-  public ServerAuthChallengePacketHandlerTBC(GameHeaderCrypt headerCrypt, IOptionsSnapshot<Net.Options.WowChatOptions> options, ILogger<ServerAuthChallengePacketHandler> logger) : base(headerCrypt, options, logger)
+  public ServerAuthChallengePacketHandlerTBC(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver headerCryptResolver, ILogger<ServerAuthChallengePacketHandler> logger)
+    : base(options, headerCryptResolver, logger)
   {
   }
 }

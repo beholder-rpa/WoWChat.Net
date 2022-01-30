@@ -31,10 +31,10 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
   protected readonly WowChatOptions _options;
   protected readonly ILogger<ServerAuthChallengePacketHandler> _logger;
 
-  public ServerAuthChallengePacketHandler(GameHeaderCrypt headerCrypt, IOptionsSnapshot<WowChatOptions> options, ILogger<ServerAuthChallengePacketHandler> logger)
+  public ServerAuthChallengePacketHandler(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver headerCryptResolver, ILogger<ServerAuthChallengePacketHandler> logger)
   {
-    _headerCrypt = headerCrypt ?? throw new ArgumentNullException(nameof(headerCrypt));
     _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+    _headerCrypt = headerCryptResolver(_options.GetExpansion());
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
@@ -50,14 +50,19 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {
-    var (sessionKey, byteBuf) = ParseServerAuthChallenge(ctx, msg);
+    if (SessionKey == null)
+    {
+      throw new InvalidOperationException("SessionKey has not been set.");
+    }
 
-    _headerCrypt.Init(sessionKey);
+    var byteBuf = ParseServerAuthChallenge(ctx, msg);
+
+    _headerCrypt.Init(SessionKey);
 
     ctx.WriteAndFlushAsync(new Packet(WorldCommand.CMSG_AUTH_CHALLENGE, byteBuf));
   }
 
-  protected virtual (byte[] sessionKey, IByteBuffer byteBuf) ParseServerAuthChallenge(IChannelHandlerContext ctx, Packet msg)
+  protected virtual IByteBuffer ParseServerAuthChallenge(IChannelHandlerContext ctx, Packet msg)
   {
     if (SessionKey == null)
     {
@@ -95,6 +100,6 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
     output.WriteBytes(hash);
 
     output.WriteBytes(_addonInfo);
-    return (SessionKey, output);
+    return output;
   }
 }

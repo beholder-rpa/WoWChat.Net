@@ -1,13 +1,15 @@
 ﻿namespace WoWChat.Net.Game;
 
+using Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 public class GamePacketEncoderCataclysm : GamePacketEncoder
 {
   protected static int WOW_CONNECTION = 0x4F57; // same hack as in mangos :D
 
-  public GamePacketEncoderCataclysm(GameHeaderCryptWotLK crypt, ILogger<GamePacketEncoderCataclysm> logger)
-    : base(crypt, logger)
+  public GamePacketEncoderCataclysm(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketEncoderCataclysm> logger)
+    : base(options, cryptResolver, logger)
   {
   }
 
