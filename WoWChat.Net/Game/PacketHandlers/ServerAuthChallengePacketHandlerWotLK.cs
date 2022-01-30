@@ -51,7 +51,7 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
     msg.ByteBuf.SkipBytes(4); // wotlk
     ServerSeed = msg.ByteBuf.ReadInt();
 
-    if (ClientSeed.HasValue == false)
+    if (ClientSeed.HasValue == false || ClientSeed.Value == default)
     {
       var rand = RandomNumberGenerator.Create();
       var randomClientSeed = new byte[4];

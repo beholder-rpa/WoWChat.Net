@@ -21,7 +21,7 @@
 
     public RealmChannelInitializer(
       IOptionsSnapshot<WowChatOptions> options,
-      RealmPacketHandlerResolver realmPacketHandlerResolver,
+      RealmPacketHandler realmPacketHandler,
       RealmPacketDecoder realmPacketDecoder,
       RealmPacketEncoder realmPacketEncoder,
       IdleStateCallback idleStateCallback,
@@ -30,7 +30,7 @@
       )
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-      _realmPacketHandler = realmPacketHandlerResolver(_options.GetExpansion()) ?? throw new NotImplementedException($"Unable to locate a realm packet handler for expansion {_options.GetExpansion()}");
+      _realmPacketHandler = realmPacketHandler ?? throw new ArgumentNullException(nameof(realmPacketHandler));
       _realmPacketDecoder = realmPacketDecoder ?? throw new ArgumentNullException(nameof(realmPacketDecoder));
       _realmPacketEncoder = realmPacketEncoder ?? throw new ArgumentNullException(nameof(realmPacketEncoder));
       _idleStateCallback = idleStateCallback ?? throw new ArgumentNullException(nameof(idleStateCallback));

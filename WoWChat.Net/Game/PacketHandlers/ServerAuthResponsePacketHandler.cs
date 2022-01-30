@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using Options;
 
 [PacketHandler(WorldCommand.SMSG_AUTH_RESPONSE, WoWExpansion.All)]
-public class ServerAuthResponsePacketHandler : IPacketHandler
+public class ServerAuthResponsePacketHandler : IPacketHandler<GameEvent>
 {
   protected readonly WowChatOptions _options;
   protected readonly ILogger<ServerAuthResponsePacketHandler> _logger;
@@ -19,11 +19,11 @@ public class ServerAuthResponsePacketHandler : IPacketHandler
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
-  public Action<GameEvent>? GameEventCallback { get; set; }
+  public Action<GameEvent>? EventCallback { get; set; }
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {
-    GameEventCallback?.Invoke(new GameLoggedInEvent());
+    EventCallback?.Invoke(new GameLoggedInEvent());
   }
 
   protected enum ServerMessageType : byte

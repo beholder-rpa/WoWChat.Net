@@ -1,10 +1,10 @@
 ﻿namespace WoWChat.Net.Game;
 
+using Common;
 using DotNetty.Buffers;
 using DotNetty.Codecs;
 using DotNetty.Transport.Channels;
-using global::WoWChat.Net.Common;
-using global::WoWChat.Net.Extensions;
+using Extensions;
 using Microsoft.Extensions.Logging;
 
 public class GamePacketEncoder : MessageToByteEncoder<Packet>

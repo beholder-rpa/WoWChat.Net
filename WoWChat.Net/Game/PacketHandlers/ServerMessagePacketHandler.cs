@@ -12,7 +12,7 @@ using Options;
 [PacketHandler(WorldCommand.SMSG_SERVER_MESSAGE, WoWExpansion.WotLK)]
 //[PacketHandler(WorldCommandCataclysm.SMSG_SERVER_MESSAGE, WoWExpansion.Cataclysm)]
 //[PacketHandler(WorldCommandMoP.SMSG_SERVER_MESSAGE, WoWExpansion.MoP)]
-public class ServerMessagePacketHandler : IPacketHandler
+public class ServerMessagePacketHandler : IPacketHandler<GameEvent>
 {
   protected readonly WowChatOptions _options;
   protected readonly ILogger<ServerMessagePacketHandler> _logger;
@@ -23,7 +23,7 @@ public class ServerMessagePacketHandler : IPacketHandler
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
-  public Action<GameEvent>? GameEventCallback { get; set; }
+  public Action<GameEvent>? EventCallback { get; set; }
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {

@@ -19,10 +19,10 @@
     protected readonly GameHeaderCrypt _headerCrypt;
     protected readonly ILogger<GamePacketHandler> _logger;
     protected readonly Timer _pingTimer;
-    protected readonly Random _random = new Random();
+    protected readonly Random _random = new();
 
     protected int _pingId = 0;
-    protected IDictionary<(int id, WoWExpansion? expansion), IPacketHandler> _packetHandlers = new Dictionary<(int id, WoWExpansion? expansion), IPacketHandler>();
+    protected IDictionary<(int id, WoWExpansion? expansion), IPacketHandler<GameEvent>> _packetHandlers = new Dictionary<(int id, WoWExpansion? expansion), IPacketHandler<GameEvent>>();
     protected IChannelHandlerContext? _context;
 
     public GamePacketHandler(
@@ -40,30 +40,8 @@
         throw new InvalidOperationException("An account name must be specified in configuration");
       }
 
-      // Init PacketHandlers
-      var packetHandlerType = typeof(IPacketHandler);
-      var packetHandlerAttributeType = typeof(PacketHandlerAttribute);
-      var handlerTypes = AppDomain.CurrentDomain.GetAssemblies()
-        .SelectMany(s => s.GetTypes())
-        .Where(p => packetHandlerType.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetHandlerAttributeType));
-
-      var packetHandlerGameEventCallback = new Action<GameEvent>((gameEvent) => OnGameEvent(gameEvent));
-
-      foreach(var handlerType in handlerTypes)
-      {
-        var packetHandlerAttributes = handlerType.GetCustomAttributes(false).OfType<PacketHandlerAttribute>();
-        var packetHandler = (IPacketHandler)serviceProvider.GetRequiredService(handlerType);
-        packetHandler.GameEventCallback = packetHandlerGameEventCallback;
-
-        foreach (var packetHandlerAttribute in packetHandlerAttributes)
-        {
-          if (_packetHandlers.ContainsKey((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion)))
-          {
-            throw new InvalidOperationException($"A packet handler is already registered for packet id {packetHandlerAttribute.Id} ({BitConverter.ToString(packetHandlerAttribute.Id.ToBytes())}), expansion: {packetHandlerAttribute.Expansion}");
-          }
-          _packetHandlers.Add((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion), packetHandler);
-        }
-      }
+      //Initialize the packet handlers
+      InitPacketHandlers(serviceProvider);
 
       _pingTimer = new Timer(30)
       {
@@ -82,6 +60,41 @@
       _context = null;
       OnGameEvent(new GameDisconnectedEvent());
       base.ChannelInactive(context);
+    }
+
+    /// <summary>
+    /// Binds the game packet handlers contained in the current app domain. Called in the constructor
+    /// </summary>
+    /// <param name="serviceProvider"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    private void InitPacketHandlers(IServiceProvider serviceProvider)
+    {
+      // Init PacketHandlers
+      var packetHandlerType = typeof(IPacketHandler<GameEvent>);
+      var packetHandlerAttributeType = typeof(PacketHandlerAttribute);
+      var handlerTypes = serviceProvider.GetServices(packetHandlerType)
+        .Select(o => o?.GetType())
+        .Where(p => packetHandlerType.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetHandlerAttributeType));
+
+      var packetHandlerGameEventCallback = new Action<GameEvent>((gameEvent) => OnGameEvent(gameEvent));
+
+      foreach (var handlerType in handlerTypes)
+      {
+        if (handlerType == default) continue;
+
+        var packetHandlerAttributes = handlerType.GetCustomAttributes(false).OfType<PacketHandlerAttribute>();
+        var packetHandler = (IPacketHandler<GameEvent>)serviceProvider.GetRequiredService(handlerType);
+        packetHandler.EventCallback = packetHandlerGameEventCallback;
+
+        foreach (var packetHandlerAttribute in packetHandlerAttributes)
+        {
+          if (_packetHandlers.ContainsKey((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion)))
+          {
+            throw new InvalidOperationException($"A packet handler is already registered for packet id {packetHandlerAttribute.Id} ({BitConverter.ToString(packetHandlerAttribute.Id.ToBytes())}), expansion: {packetHandlerAttribute.Expansion}");
+          }
+          _packetHandlers.Add((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion), packetHandler);
+        }
+      }
     }
 
     // Vanilla does not have a keep alive packet

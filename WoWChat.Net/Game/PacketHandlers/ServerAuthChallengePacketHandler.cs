@@ -12,7 +12,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 [PacketHandler(WorldCommand.SMSG_AUTH_CHALLENGE, WoWExpansion.Vanilla)]
-public class ServerAuthChallengePacketHandler : IPacketHandler
+public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
 {
   protected readonly byte[] _addonInfo = new byte[]
     {
@@ -46,15 +46,15 @@ public class ServerAuthChallengePacketHandler : IPacketHandler
 
   public int? ServerSeed { get; set; }
 
-  public Action<GameEvent>? GameEventCallback { get; set; }
+  public Action<GameEvent>? EventCallback { get; set; }
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {
-    var authChallengeMessage = ParseServerAuthChallenge(ctx, msg);
+    var (sessionKey, byteBuf) = ParseServerAuthChallenge(ctx, msg);
 
-    _headerCrypt.Init(authChallengeMessage.sessionKey);
+    _headerCrypt.Init(sessionKey);
 
-    ctx.WriteAndFlushAsync(new Packet(WorldCommand.CMSG_AUTH_CHALLENGE, authChallengeMessage.byteBuf));
+    ctx.WriteAndFlushAsync(new Packet(WorldCommand.CMSG_AUTH_CHALLENGE, byteBuf));
   }
 
   protected virtual (byte[] sessionKey, IByteBuffer byteBuf) ParseServerAuthChallenge(IChannelHandlerContext ctx, Packet msg)
@@ -68,7 +68,7 @@ public class ServerAuthChallengePacketHandler : IPacketHandler
 
     ServerSeed = msg.ByteBuf.ReadInt();
 
-    if (ClientSeed.HasValue == false)
+    if (ClientSeed.HasValue == false || ClientSeed.Value == default)
     {
       var rand = RandomNumberGenerator.Create();
       var randomClientSeed = new byte[4];

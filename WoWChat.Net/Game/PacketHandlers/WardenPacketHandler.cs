@@ -10,7 +10,7 @@ using Options;
 [PacketHandler(WorldCommand.SMSG_WARDEN_DATA, WoWExpansion.Vanilla)]
 [PacketHandler(WorldCommand.SMSG_WARDEN_DATA, WoWExpansion.TBC)]
 [PacketHandler(WorldCommand.SMSG_WARDEN_DATA, WoWExpansion.WotLK)]
-public class WardenPacketHandler : IPacketHandler
+public class WardenPacketHandler : IPacketHandler<GameEvent>
 {
   protected readonly WowChatOptions _options;
   protected readonly ILogger<WardenPacketHandler> _logger;
@@ -21,7 +21,7 @@ public class WardenPacketHandler : IPacketHandler
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
-  public Action<GameEvent>? GameEventCallback { get; set; }
+  public Action<GameEvent>? EventCallback { get; set; }
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {

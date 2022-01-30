@@ -1,10 +1,8 @@
 ﻿namespace WoWChat.Net.Realm.Events
 {
-  using System.Numerics;
-
   public record RealmAuthenticatedEvent : RealmEvent
   {
-    public BigInteger SessionKey { get; init; }
+    public byte[] SessionKey { get; init; } = Array.Empty<byte>();
 
     public int AccountFlag { get; init; }
   }

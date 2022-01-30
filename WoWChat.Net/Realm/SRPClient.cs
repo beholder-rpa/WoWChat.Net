@@ -32,7 +32,8 @@
       byte[] g,
       byte[] n,
       byte[] salt,
-      byte[] nonce)
+      byte[] nonce,
+      byte[]? a = null)
     {
       // server public key (B)
       ServerPrivateKey = b.ToBigInteger();
@@ -52,16 +53,24 @@
 
       var rand = RandomNumberGenerator.Create();
 
-      // generate random key pair
-      BigInteger a;
-      do
+      BigInteger keyPair;
+      if (a == null)
       {
-        byte[] randBytes = new byte[19];
-        rand.GetBytes(randBytes);
-        a = randBytes.ToBigInteger();
+        // generate random key pair
+        do
+        {
+          byte[] randBytes = new byte[19];
+          rand.GetBytes(randBytes);
+          keyPair = randBytes.ToBigInteger();
 
-        A = bigG.ModPow(a, Modulus);
-      } while (A.ModPow(1, Modulus) == 0);
+          A = bigG.ModPow(keyPair, Modulus);
+        } while (A.ModPow(1, Modulus) == 0);
+      }
+      else
+      {
+        keyPair = a.ToBigInteger();
+        A = bigG.ModPow(keyPair, Modulus);
+      }
 
       // compute session key
       using (SHA1 alg = SHA1.Create())
@@ -69,7 +78,7 @@
         var k = new BigInteger(3);
 
         var u = alg.ComputeHash(A.ToCleanByteArray().Combine(ServerPrivateKey.ToCleanByteArray())).ToBigInteger();
-        var S = ((ServerPrivateKey + k * (Modulus - bigG.ModPow(PasswordSaltedHash, Modulus))) % Modulus).ModPow(a + (u * PasswordSaltedHash), Modulus);
+        var S = ((ServerPrivateKey + k * (Modulus - bigG.ModPow(PasswordSaltedHash, Modulus))) % Modulus).ModPow(keyPair + (u * PasswordSaltedHash), Modulus);
 
         byte[] keyHash;
         byte[] sData = S.ToCleanByteArray();

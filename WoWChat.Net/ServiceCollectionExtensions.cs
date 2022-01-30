@@ -4,6 +4,9 @@ using Common;
 using DotNetty.Transport.Channels;
 using Game;
 using Game.PacketHandlers;
+using global::WoWChat.Net.Game.Events;
+using global::WoWChat.Net.Realm.Events;
+using global::WoWChat.Net.Realm.PacketHandlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Options;
@@ -30,7 +33,6 @@ public static class ServiceCollectionExtensions
 
     // Realm
     services.AddScoped<RealmPacketHandler>();
-    services.AddScoped<RealmPacketHandlerTBC>();
 
     services.AddScoped<RealmPacketDecoder>();
     services.AddScoped<RealmPacketEncoder>();
@@ -58,10 +60,6 @@ public static class ServiceCollectionExtensions
     services.AddScoped<GameHeaderCryptWotLK>();
 
     services.AddScoped<GamePacketHandler>();
-    services.AddScoped<GamePacketHandlerTBC>();
-    services.AddScoped<GamePacketHandlerWotLK>();
-    //services.AddSingleton<GamePacketHandlerCataclysm15595>();
-    //services.AddSingleton<GamePacketHandlerMoP18414>();
 
     services.AddScoped<GameChannelInitializer>();
     services.AddScoped<GameConnector>();
@@ -70,28 +68,6 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IWoWChat, WoWChat>();
 
     // Resolvers
-    services.AddTransient<RealmPacketHandlerResolver>(serviceProvider => expansion =>
-    {
-      return expansion switch
-      {
-        WoWExpansion.Vanilla => serviceProvider.GetRequiredService<RealmPacketHandler>(),
-        _ => serviceProvider.GetRequiredService<RealmPacketHandlerTBC>(),
-      };
-    });
-
-    services.AddTransient<GamePacketHandlerResolver>(serviceProvider => expansion =>
-    {
-      return expansion switch
-      {
-        WoWExpansion.Vanilla => serviceProvider.GetRequiredService<GamePacketHandler>(),
-        WoWExpansion.TBC => serviceProvider.GetRequiredService<GamePacketHandlerTBC>(),
-        WoWExpansion.WotLK => serviceProvider.GetRequiredService<GamePacketHandlerWotLK>(),
-        WoWExpansion.Cataclysm => throw new NotImplementedException(),
-        WoWExpansion.MoP => throw new NotImplementedException(),
-        _ => throw new NotImplementedException($"Unable to locate a game packet handler for expansion {expansion}")
-      };
-    });
-
     services.AddTransient<GamePacketDecoderResolver>(serviceProvider => expansion =>
     {
       return expansion switch
@@ -126,13 +102,31 @@ public static class ServiceCollectionExtensions
       };
     });
 
-    //Known Packet Handlers
-    services.AddScoped<ServerAuthChallengePacketHandler>();
-    services.AddScoped<ServerAuthChallengePacketHandlerTBC>();
-    services.AddScoped<ServerAuthChallengePacketHandlerWotLK>();
+    // Add Known Packet Handlers
+    var packetHandlerAttributeType = typeof(PacketHandlerAttribute);
 
-    services.AddScoped<WardenPacketHandler>();
-    services.AddScoped<ServerMessagePacketHandler>();
-    services.AddScoped<ServerAuthResponsePacketHandler>();
+    // Realm
+    var realmPacketHandlerInterface = typeof(IPacketHandler<RealmEvent>);
+    var realmPacketHandlerTypes = AppDomain.CurrentDomain.GetAssemblies()
+      .SelectMany(s => s.GetTypes())
+      .Where(p => realmPacketHandlerInterface.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetHandlerAttributeType));
+
+    foreach(var realmPacketHandlerType in realmPacketHandlerTypes)
+    {
+      services.AddScoped(realmPacketHandlerInterface, realmPacketHandlerType);
+      services.AddScoped(realmPacketHandlerType);
+    }
+
+    // Game
+    var gamePacketHandlerInterface = typeof(IPacketHandler<GameEvent>);
+    var gamePacketHandlerTypes = AppDomain.CurrentDomain.GetAssemblies()
+      .SelectMany(s => s.GetTypes())
+      .Where(p => gamePacketHandlerInterface.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetHandlerAttributeType));
+
+    foreach (var gamePacketHandlerType in gamePacketHandlerTypes)
+    {
+      services.AddScoped(gamePacketHandlerInterface, gamePacketHandlerType);
+      services.AddScoped(gamePacketHandlerType);
+    }
   }
 }

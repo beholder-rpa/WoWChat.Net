@@ -22,15 +22,15 @@
     private readonly GamePacketHandler _gamePacketHandler;
     private readonly ILogger<WoWChat> _logger;
 
-    private BigInteger _sessionKey;
+    private byte[] _sessionKey = Array.Empty<byte>();
 
     public WoWChat(
       IOptionsSnapshot<WowChatOptions> options,
       IEventLoopGroup group,
       RealmConnector realmConnector,
-      RealmPacketHandlerResolver realmPacketHandlerResolver,
+      RealmPacketHandler realmPacketHandler,
       GameConnector gameConnector,
-      GamePacketHandlerResolver gamePacketHandlerResolver,
+      GamePacketHandler gamePacketHandler,
       ILogger<WoWChat> logger)
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
@@ -39,10 +39,10 @@
       _group = group ?? throw new ArgumentNullException(nameof(group));
       
       _realmConnector = realmConnector ?? throw new ArgumentNullException(nameof(realmConnector));
-      _realmPacketHandler = realmPacketHandlerResolver(expansion) ?? throw new ArgumentNullException(nameof(realmPacketHandlerResolver));
-      
+      _realmPacketHandler = realmPacketHandler ?? throw new ArgumentNullException(nameof(realmPacketHandler));
+
       _gameConnector = gameConnector ?? throw new ArgumentNullException(nameof(gameConnector));
-      _gamePacketHandler = gamePacketHandlerResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketHandlerResolver));
+      _gamePacketHandler = gamePacketHandler ?? throw new ArgumentNullException(nameof(gamePacketHandler));
       
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -54,7 +54,7 @@
 
       ((IObservable<GameEvent>)_gameConnector).Subscribe(this);
       ((IObservable<GameEvent>)_gamePacketHandler).Subscribe(this);
-      _sessionKey = default;
+      _sessionKey = Array.Empty<byte>();
       await _realmConnector.Connect();
     }
 
@@ -103,18 +103,18 @@
           else
           {
             _logger.LogInformation("Successfully located #{realmId} - {realmName} at {host}:{port} ({version})", realm.RealmId, realm.Name, realm.Host, realm.Port, realm.Version == null ? "Unknown Version" : realm.Version.ToString());
-            _gameConnector.Connect(realm, _sessionKey.ToCleanByteArray()).Wait();
+            _gameConnector.Connect(realm, _sessionKey).Wait();
           }
           break;
         case RealmDisconnectedEvent disconnectedEvent when disconnectedEvent.AutoReconnect == true:
-          _sessionKey = default;
+          _sessionKey = Array.Empty<byte>();
           _group.ShutdownGracefullyAsync().Wait();
           Task.Delay(_options.ReconnectDelayMs).Wait();
           _logger.LogInformation("Disconnected from server! Reconnecting in {reconnectDelay} seconds...", _options.ReconnectDelayMs);
           _realmConnector.Connect().Forget();
           break;
         case RealmDisconnectedEvent disconnectedEvent when disconnectedEvent.AutoReconnect == false:
-          _sessionKey = default;
+          _sessionKey = Array.Empty<byte>();
           if (disconnectedEvent.IsExpected)
             _logger.LogInformation("Disconnected from realm server (expected).");
           else
@@ -148,7 +148,7 @@
         case GameConnectingEvent connectingEvent:
           _logger.LogInformation("Connecting to game server {realmName} ({host}:{port})", connectingEvent.Realm.Name, connectingEvent.Realm.Host, connectingEvent.Realm.Port);
           break;
-        case GameConnectedEvent connectingEvent:
+        case GameConnectedEvent connectedEvent:
           _logger.LogInformation("Connected! Authenticating...");
           break;
         default:

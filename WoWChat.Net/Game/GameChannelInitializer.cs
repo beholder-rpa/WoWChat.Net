@@ -21,7 +21,7 @@
 
     public GameChannelInitializer(
       IOptionsSnapshot<WowChatOptions> options,
-      GamePacketHandlerResolver gamePacketHandlerResolver,
+      GamePacketHandler gamePacketHandler,
       GamePacketDecoderResolver gamePacketDecoderResolver,
       GamePacketEncoderResolver gamePacketEncoderResolver,
       IdleStateCallback idleStateCallback,
@@ -31,7 +31,7 @@
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       var expansion = _options.GetExpansion();
 
-      _gamePacketHandler = gamePacketHandlerResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketHandlerResolver));
+      _gamePacketHandler = gamePacketHandler ?? throw new ArgumentNullException(nameof(gamePacketHandler));
       _gamePacketDecoder = gamePacketDecoderResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketDecoderResolver));
       _gamePacketEncoder = gamePacketEncoderResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketEncoderResolver));
       _idleStateCallback = idleStateCallback ?? throw new ArgumentNullException(nameof(idleStateCallback));

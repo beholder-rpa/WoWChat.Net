@@ -3,12 +3,12 @@
 using DotNetty.Transport.Channels;
 using Game.Events;
 
-public interface IPacketHandler
+public interface IPacketHandler<T>
 {
   /// <summary>
-  /// Gets or sets a game event that the packet handler will use to publish game events.
+  /// Gets or sets a callback that the packet handler will use to publish game events.
   /// </summary>
-  Action<GameEvent>? GameEventCallback { get; set; }
+  Action<T>? EventCallback { get; set; }
 
   /// <summary>
   /// Processes the indicated packet for the given context.
