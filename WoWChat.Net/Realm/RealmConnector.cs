@@ -66,7 +66,8 @@ public class RealmConnector : IObservable<RealmEvent>
       }
 
       _realmChannel = connectTask.Result;
-      OnRealmEvent(new RealmConnectedEvent(){
+      OnRealmEvent(new RealmConnectedEvent()
+      {
         Name = _options.RealmName,
         Host = _options.RealmListHost,
         Port = _options.RealmListPort

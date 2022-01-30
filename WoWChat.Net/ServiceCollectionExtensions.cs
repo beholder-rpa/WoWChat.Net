@@ -1,12 +1,13 @@
 ﻿namespace WoWChat.Net;
 
-using DotNetty.Transport.Channels;
-using Microsoft.Extensions.Configuration;
 using Common;
-using Options;
+using DotNetty.Transport.Channels;
 using Game;
-using Realm;
+using Game.PacketHandlers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Options;
+using Realm;
 
 public static class ServiceCollectionExtensions
 {
@@ -38,15 +39,23 @@ public static class ServiceCollectionExtensions
     services.AddScoped<RealmConnector>();
 
     // Game
-    services.AddScoped<GamePacketEncoder>();
+    services.AddScoped<GameHeaderCrypt>();
+    services.AddScoped<GameHeaderCryptTBC>();
+    services.AddScoped<GameHeaderCryptWotLK>();
+    services.AddScoped<GameHeaderCryptMoP>();
 
     services.AddScoped<GamePacketDecoder>();
     services.AddScoped<GamePacketDecoderWotLK>();
+    services.AddScoped<GamePacketDecoderCataclysm>();
+    services.AddScoped<GamePacketDecoderMoP>();
+
+    services.AddScoped<GamePacketEncoder>();
+    services.AddScoped<GamePacketEncoderCataclysm>();
+    services.AddScoped<GamePacketEncoderMoP>();
 
     services.AddScoped<GameHeaderCrypt>();
     services.AddScoped<GameHeaderCryptTBC>();
     services.AddScoped<GameHeaderCryptWotLK>();
-    //socketChannel.attr(CRYPT).set(new GameHeaderCryptMoP)
 
     services.AddScoped<GamePacketHandler>();
     services.AddScoped<GamePacketHandlerTBC>();
@@ -65,9 +74,65 @@ public static class ServiceCollectionExtensions
     {
       return expansion switch
       {
-        WoWExpansion.Vanilla => serviceProvider.GetService<RealmPacketHandler>(),
-        _ => serviceProvider.GetService<RealmPacketHandlerTBC>(),
+        WoWExpansion.Vanilla => serviceProvider.GetRequiredService<RealmPacketHandler>(),
+        _ => serviceProvider.GetRequiredService<RealmPacketHandlerTBC>(),
       };
     });
+
+    services.AddTransient<GamePacketHandlerResolver>(serviceProvider => expansion =>
+    {
+      return expansion switch
+      {
+        WoWExpansion.Vanilla => serviceProvider.GetRequiredService<GamePacketHandler>(),
+        WoWExpansion.TBC => serviceProvider.GetRequiredService<GamePacketHandlerTBC>(),
+        WoWExpansion.WotLK => serviceProvider.GetRequiredService<GamePacketHandlerWotLK>(),
+        WoWExpansion.Cataclysm => throw new NotImplementedException(),
+        WoWExpansion.MoP => throw new NotImplementedException(),
+        _ => throw new NotImplementedException($"Unable to locate a game packet handler for expansion {expansion}")
+      };
+    });
+
+    services.AddTransient<GamePacketDecoderResolver>(serviceProvider => expansion =>
+    {
+      return expansion switch
+      {
+        WoWExpansion.WotLK => serviceProvider.GetRequiredService<GamePacketDecoderWotLK>(),
+        WoWExpansion.Cataclysm => serviceProvider.GetRequiredService<GamePacketDecoderCataclysm>(),
+        WoWExpansion.MoP => serviceProvider.GetRequiredService<GamePacketDecoderMoP>(),
+        _ => serviceProvider.GetRequiredService<GamePacketDecoder>()
+      };
+    });
+
+    services.AddTransient<GamePacketEncoderResolver>(serviceProvider => expansion =>
+    {
+      return expansion switch
+      {
+        WoWExpansion.Cataclysm => serviceProvider.GetRequiredService<GamePacketEncoderCataclysm>(),
+        WoWExpansion.MoP => serviceProvider.GetRequiredService<GamePacketEncoderMoP>(),
+        _ => serviceProvider.GetRequiredService<GamePacketEncoder>()
+      };
+    });
+
+    services.AddTransient<GameHeaderCryptResolver>(serviceProvider => expansion =>
+    {
+      return expansion switch
+      {
+        WoWExpansion.Vanilla => serviceProvider.GetRequiredService<GameHeaderCrypt>(),
+        WoWExpansion.TBC => serviceProvider.GetRequiredService<GameHeaderCryptTBC>(),
+        WoWExpansion.WotLK => serviceProvider.GetRequiredService<GameHeaderCryptWotLK>(),
+        WoWExpansion.Cataclysm => serviceProvider.GetRequiredService<GameHeaderCryptWotLK>(),
+        WoWExpansion.MoP => serviceProvider.GetRequiredService<GameHeaderCryptMoP>(),
+        _ => throw new NotImplementedException($"Unable to locate a game header crypt handler for expansion {expansion}")
+      };
+    });
+
+    //Known Packet Handlers
+    services.AddScoped<ServerAuthChallengePacketHandler>();
+    services.AddScoped<ServerAuthChallengePacketHandlerTBC>();
+    services.AddScoped<ServerAuthChallengePacketHandlerWotLK>();
+
+    services.AddScoped<WardenPacketHandler>();
+    services.AddScoped<ServerMessagePacketHandler>();
+    services.AddScoped<ServerAuthResponsePacketHandler>();
   }
 }

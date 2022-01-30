@@ -4,9 +4,9 @@
   using DotNetty.Buffers;
   using DotNetty.Codecs;
   using DotNetty.Transport.Channels;
+  using Extensions;
   using Microsoft.Extensions.Logging;
   using System;
-  using Extensions;
 
   public class RealmPacketEncoder : MessageToByteEncoder<Packet>
   {
@@ -19,7 +19,7 @@
 
     protected override void Encode(IChannelHandlerContext context, Packet message, IByteBuffer output)
     {
-      _logger.LogDebug("SEND REALM PACKET: {id} - {byteBuf}", message.Id, BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+      _logger.LogDebug("SEND REALM PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
 
       output.WriteByte(message.Id);
       output.WriteBytes(message.ByteBuf);

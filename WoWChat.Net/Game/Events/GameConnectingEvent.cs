@@ -1,13 +1,12 @@
-﻿namespace WoWChat.Net.Game.Events
+﻿namespace WoWChat.Net.Game.Events;
+
+using Common;
+
+public record GameConnectingEvent : GameEvent
 {
-  public record GameConnectingEvent : GameEvent
-  {
-    public string Name { get; init; } = string.Empty;
+  public GameRealm Realm { get; init; } = new GameRealm();
 
-    public string Host { get; init; } = string.Empty;
+  public int Port { get; init; } = 8085;
 
-    public int Port { get; init; } = 8085;
-
-    public string SessionKey { get; init; } = string.Empty;
-  }
+  public string SessionKey { get; init; } = string.Empty;
 }

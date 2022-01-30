@@ -30,15 +30,20 @@
       RealmConnector realmConnector,
       RealmPacketHandlerResolver realmPacketHandlerResolver,
       GameConnector gameConnector,
-      GamePacketHandler gamePacketHandler,
+      GamePacketHandlerResolver gamePacketHandlerResolver,
       ILogger<WoWChat> logger)
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+      var expansion = _options.GetExpansion();
+
       _group = group ?? throw new ArgumentNullException(nameof(group));
+      
       _realmConnector = realmConnector ?? throw new ArgumentNullException(nameof(realmConnector));
-      _realmPacketHandler = realmPacketHandlerResolver(_options.GetExpansion()) ?? throw new NotImplementedException($"Unable to locate a realm packet handler for expansion {_options.GetExpansion()}");
+      _realmPacketHandler = realmPacketHandlerResolver(expansion) ?? throw new ArgumentNullException(nameof(realmPacketHandlerResolver));
+      
       _gameConnector = gameConnector ?? throw new ArgumentNullException(nameof(gameConnector));
-      _gamePacketHandler = gamePacketHandler ?? throw new ArgumentNullException(nameof(gamePacketHandler));
+      _gamePacketHandler = gamePacketHandlerResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketHandlerResolver));
+      
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -47,6 +52,8 @@
       ((IObservable<RealmEvent>)_realmConnector).Subscribe(this);
       ((IObservable<RealmEvent>)_realmPacketHandler).Subscribe(this);
 
+      ((IObservable<GameEvent>)_gameConnector).Subscribe(this);
+      ((IObservable<GameEvent>)_gamePacketHandler).Subscribe(this);
       _sessionKey = default;
       await _realmConnector.Connect();
     }
@@ -95,7 +102,8 @@
           }
           else
           {
-            _logger.LogInformation("Successfully located #{realmId} - {realmName} at {host}:{port}", realm.RealmId, realm.Name, realm.Host, realm.Port);
+            _logger.LogInformation("Successfully located #{realmId} - {realmName} at {host}:{port} ({version})", realm.RealmId, realm.Name, realm.Host, realm.Port, realm.Version == null ? "Unknown Version" : realm.Version.ToString());
+            _gameConnector.Connect(realm, _sessionKey.ToCleanByteArray()).Wait();
           }
           break;
         case RealmDisconnectedEvent disconnectedEvent when disconnectedEvent.AutoReconnect == true:
@@ -116,7 +124,7 @@
           _logger.LogInformation("Error: {message}", errorEvent.Message);
           break;
         default:
-          _logger.LogWarning("Error: Unhandled Realm Event: {eventType}", value.GetType());
+          _logger.LogWarning("Warning: Unhandled Realm Event: {eventType}", value.GetType());
           break;
       }
     }
@@ -138,7 +146,13 @@
       switch (value)
       {
         case GameConnectingEvent connectingEvent:
-          _logger.LogInformation("Connecting to game server {realmName} ({host}:{port})", connectingEvent.Name, connectingEvent.Host, connectingEvent.Port);
+          _logger.LogInformation("Connecting to game server {realmName} ({host}:{port})", connectingEvent.Realm.Name, connectingEvent.Realm.Host, connectingEvent.Realm.Port);
+          break;
+        case GameConnectedEvent connectingEvent:
+          _logger.LogInformation("Connected! Authenticating...");
+          break;
+        default:
+          _logger.LogWarning("Warning: Unhandled Game Event: {eventType}", value.GetType());
           break;
       }
     }

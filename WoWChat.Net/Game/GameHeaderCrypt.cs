@@ -10,7 +10,7 @@
     private int _recv_j = 0;
     protected byte[] _key = Array.Empty<byte>();
 
-    public virtual bool IsInitialized { get; private set; }
+    public virtual bool IsInitialized { get; protected set; }
 
     public virtual byte[] Decrypt(byte[] data)
     {

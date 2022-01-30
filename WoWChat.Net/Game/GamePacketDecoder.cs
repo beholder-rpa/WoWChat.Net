@@ -5,16 +5,13 @@
   using DotNetty.Codecs;
   using DotNetty.Transport.Channels;
   using Extensions;
-  using Helpers;
   using Microsoft.Extensions.Logging;
-  using Microsoft.Extensions.Options;
-  using Options;
   using System;
   using System.Collections.Generic;
 
   public class GamePacketDecoder : ByteToMessageDecoder
   {
-    private readonly WowChatOptions _options;
+    protected readonly GameHeaderCrypt _crypt;
     private readonly ILogger<GamePacketDecoder> _logger;
 
     protected int HEADER_LENGTH = 4;
@@ -22,9 +19,9 @@
     private int _size = 0;
     private int _id = 0;
 
-    public GamePacketDecoder(IOptionsSnapshot<WowChatOptions> options, ILogger<GamePacketDecoder> logger)
+    public GamePacketDecoder(GameHeaderCrypt crypt, ILogger<GamePacketDecoder> logger)
     {
-      _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+      _crypt = crypt ?? throw new ArgumentNullException(nameof(crypt));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -37,7 +34,13 @@
 
       if (_size == 0 && _id == 0)
       {
-        
+        // decrypt if necessary
+        var tuple = _crypt.IsInitialized
+          ? ParseGameHeaderEncrypted(input)
+          : ParseGameHeader(input);
+
+        _id = tuple.Item1;
+        _size = tuple.Item2;
       }
 
       if (_size > input.ReadableBytes)
@@ -49,12 +52,12 @@
       var byteBuf = input.ReadBytes(_size);
 
       // decompress if necessary
-      var (newId, decompressed) = Decompress(_id, byteBuf);
+      var (newId, decompressed) = Decompress(context, _id, byteBuf);
 
 
-      var packet = new Packet(_id, byteBuf);
+      var packet = new Packet(newId, decompressed);
 
-      _logger.LogDebug("RECV REALM PACKET: {id} - {byteBuf}", _id, BitConverter.ToString(byteBuf.GetArrayCopy()));
+      _logger.LogDebug("RECV GAME PACKET: {id} - {byteBuf}", BitConverter.ToString(newId.ToBytes()), BitConverter.ToString(decompressed.GetArrayCopy()));
 
       output.Add(packet);
 
@@ -63,16 +66,34 @@
       _size = 0;
     }
 
+    protected virtual (int, int) ParseGameHeader(IByteBuffer input) {
+      var size = input.ReadShort() - 2;
+      var id = input.ReadShortLE();
+      return (id, size);
+    }
+
+    protected virtual (int, int) ParseGameHeaderEncrypted(IByteBuffer input)
+    {
+      var header = new byte[HEADER_LENGTH];
+      input.ReadBytes(header);
+      var decrypted = _crypt.Decrypt(header);
+      var size = ((decrypted[0] & 0xFF) << 8 | decrypted[1] & 0xFF) - 2;
+      var id = (decrypted[3] & 0xFF) << 8 | decrypted[2] & 0xFF;
+      return (id, size);
+    }
+
     /// <summary>
     /// Decompresses the specified byte buffer
     /// </summary>
     /// <remarks>
     /// vanilla has no compression. starts in cata/mop
     /// </remarks>
+    /// <param name="context"></param>
     /// <param name="id"></param>
     /// <param name="input"></param>
     /// <returns></returns>
-    protected virtual (int, IByteBuffer) Decompress(int id, IByteBuffer input) {
+    protected virtual (int, IByteBuffer) Decompress(IChannelHandlerContext context, int id, IByteBuffer input)
+    {
       return (id, input);
     }
   }

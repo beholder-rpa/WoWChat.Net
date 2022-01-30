@@ -1,6 +1,4 @@
 ﻿namespace WoWChat.Net.Tests;
-
-using DotNetty.Buffers;
 using Xunit;
 
 public class SRPClientTest
@@ -12,6 +10,6 @@ public class SRPClientTest
   [Fact]
   public void Test1()
   {
-    
+
   }
 }

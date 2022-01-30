@@ -14,6 +14,8 @@
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    public override bool IsSharable => true;
+
     public override void UserEventTriggered(IChannelHandlerContext context, object evt)
     {
       if (evt is IdleStateEvent idleStateEvent)

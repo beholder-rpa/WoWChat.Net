@@ -9,23 +9,46 @@ using Microsoft.Extensions.Logging;
 
 public class GamePacketEncoder : MessageToByteEncoder<Packet>
 {
-  private readonly ILogger<GamePacketEncoder> _logger;
+  protected readonly GameHeaderCrypt _crypt;
+  protected readonly ILogger<GamePacketEncoder> _logger;
 
-  public GamePacketEncoder(ILogger<GamePacketEncoder> logger)
+  public GamePacketEncoder(GameHeaderCrypt crypt, ILogger<GamePacketEncoder> logger)
   {
+    _crypt = crypt ?? throw new ArgumentNullException(nameof(crypt));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
   protected override void Encode(IChannelHandlerContext context, Packet message, IByteBuffer output)
   {
-    _logger.LogDebug("SEND GAME PACKET: {id} - {byteBuf}", message.Id, BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+    var isUnencrypted = IsUnencryptedPacket(message.Id);
 
-    output.WriteByte(message.Id);
+    var headerSize = isUnencrypted ? 4 : 6;
+
+    using var ms = new MemoryStream(headerSize);
+    ms.Write((message.ByteBuf.WriterIndex + headerSize - 2).ToBytesShort());
+    ms.Write(message.Id.ToBytesShort());
+
+    byte[] header;
+    if (isUnencrypted)
+    {
+      header = ms.ToArray();
+    }
+    else
+    {
+      ms.WriteByte(0);
+      ms.WriteByte(0);
+      header = _crypt.Encrypt(ms.ToArray());
+    }
+
+    _logger.LogDebug("SEND GAME PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+
+    output.WriteBytes(header);
     output.WriteBytes(message.ByteBuf);
     message.ByteBuf.Release();
   }
 
-  protected bool IsUnencryptedPacket(int id){
+  protected virtual bool IsUnencryptedPacket(int id)
+  {
     return id == WorldCommand.CMSG_AUTH_CHALLENGE;
   }
 }

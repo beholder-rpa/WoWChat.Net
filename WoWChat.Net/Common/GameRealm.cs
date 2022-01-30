@@ -1,6 +1,6 @@
-﻿namespace WoWChat.Net.Realm;
+﻿namespace WoWChat.Net.Common;
 
-public record Realm
+public record GameRealm
 {
   public byte Type { get; init; }
 
@@ -21,4 +21,6 @@ public record Realm
   public byte TimeZone { get; init; }
 
   public byte RealmId { get; init; }
+
+  public Version? Version { get; init; }
 }

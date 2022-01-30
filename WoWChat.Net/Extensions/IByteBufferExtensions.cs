@@ -42,7 +42,8 @@ public static class IByteBufferExtensions
   public static string ReadString(this IByteBuffer byteBuf)
   {
     var result = new List<byte>();
-    while (byteBuf.ReadableBytes > 0) {
+    while (byteBuf.ReadableBytes > 0)
+    {
       var value = byteBuf.ReadByte();
       if (value == 0)
       {

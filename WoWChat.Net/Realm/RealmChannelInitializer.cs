@@ -25,7 +25,7 @@
       RealmPacketDecoder realmPacketDecoder,
       RealmPacketEncoder realmPacketEncoder,
       IdleStateCallback idleStateCallback,
-      
+
       ILogger<RealmChannelInitializer> logger
       )
     {

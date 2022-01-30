@@ -46,7 +46,7 @@
     public override void ChannelInactive(IChannelHandlerContext context)
     {
       if (_isExpectedDisconnect == false)
-      { 
+      {
         OnRealmEvent(new RealmDisconnectedEvent()
         {
           IsExpected = false,
@@ -68,35 +68,35 @@
 
     public override void ChannelRead(IChannelHandlerContext context, object message)
     {
-      if (message is Packet packet)
+      if (message is Packet packet == false)
       {
-        switch (packet.Id)
-        {
-          case (int)RealmCommand.CMD_AUTH_LOGON_CHALLENGE when _logonState == 0:
-            HandleAuthLogonChallenge(context, packet);
-            break;
-          case (int)RealmCommand.CMD_AUTH_LOGON_PROOF when _logonState == 1:
-            HandleAuthLogonProof(context, packet);
-            break;
-          case (int)RealmCommand.CMD_REALM_LIST when _logonState == 2:
-            HandleRealmList(context, packet);
-            break;
-          default:
-            _logger.LogDebug("Received packet {commandId} in unexpected logonState {logonState}", packet.Id, _logonState);
-            OnRealmEvent(new RealmErrorEvent()
-            {
-              Message = $"Received packet {packet.Id} in unexpected logonState {_logonState}"
-            });
-            packet.ByteBuf.Release();
-            return;
-        }
-        packet.ByteBuf.Release();
-        _logonState += 1;
+        _logger.LogError("Packet is instance of {messageType}", message.GetType());
+        base.ChannelRead(context, message);
         return;
       }
 
-      _logger.LogError("Packet is instance of {messageType}", message.GetType());
-      base.ChannelRead(context, message);
+      switch (packet.Id)
+      {
+        case RealmCommand.CMD_AUTH_LOGON_CHALLENGE when _logonState == 0:
+          HandleAuthLogonChallenge(context, packet);
+          break;
+        case RealmCommand.CMD_AUTH_LOGON_PROOF when _logonState == 1:
+          HandleAuthLogonProof(context, packet);
+          break;
+        case RealmCommand.CMD_REALM_LIST when _logonState == 2:
+          HandleRealmList(context, packet);
+          break;
+        default:
+          _logger.LogDebug("Received packet {commandId} in unexpected logonState {logonState}", packet.Id, _logonState);
+          OnRealmEvent(new RealmErrorEvent()
+          {
+            Message = $"Received packet {packet.Id} in unexpected logonState {_logonState}"
+          });
+          packet.ByteBuf.Release();
+          return;
+      }
+      packet.ByteBuf.Release();
+      _logonState += 1;
     }
 
     protected virtual Packet CreateClientAuthChallenge(IChannelHandlerContext context)
@@ -183,7 +183,7 @@
         salt,
         nonce
         );
-      
+
       var aArray = _srpClient.A.ToCleanByteArray();
 
       var byteBuf = ctx.Allocator.Buffer(74, 74);
@@ -212,7 +212,7 @@
         _isExpectedDisconnect = true;
         ctx.CloseAsync().Wait();
 
-        if (result == (byte)RealmAuthResult.WOW_FAIL_UNKNOWN_ACCOUNT)
+        if (result == RealmAuthResult.WOW_FAIL_UNKNOWN_ACCOUNT)
         {
           // seems sometimes this error happens even on a legit connect. so just run regular reconnect loop
           OnRealmEvent(new RealmDisconnectedEvent()
@@ -273,22 +273,22 @@
         RealmList = realmList
       });
 
-      _isExpectedDisconnect = true;
-      ctx.CloseAsync().Wait();
-      OnRealmEvent(new RealmDisconnectedEvent()
-      {
-        AutoReconnect = false,
-        IsExpected = true,
-        Reason = "Realm List Retrieved"
-      });
+      //_isExpectedDisconnect = true;
+      //ctx.CloseAsync().Wait();
+      //OnRealmEvent(new RealmDisconnectedEvent()
+      //{
+      //  AutoReconnect = false,
+      //  IsExpected = true,
+      //  Reason = "Realm List Retrieved"
+      //});
     }
 
-    protected virtual IList<Realm> ParseRealmList(Packet packet)
+    protected virtual IList<GameRealm> ParseRealmList(Packet packet)
     {
-      var result = new List<Realm>();
+      var result = new List<GameRealm>();
       packet.ByteBuf.ReadIntLE(); // unknown
       var numRealms = packet.ByteBuf.ReadByte();
-      for(int i = 0; i < numRealms; i++)
+      for (int i = 0; i < numRealms; i++)
       {
         var realmType = packet.ByteBuf.ReadByte(); // realm type (pvp/pve)
         var realmLocked = packet.ByteBuf.ReadByte(); // Locked/Unlocked
@@ -311,7 +311,7 @@
         // some servers "overflow" the port on purpose to dissuade rudimentary bots
         var port = addressTokens.Length > 1 ? int.Parse(addressTokens[1]) & 0xFFFF : 8085;
 
-        result.Add(new Realm()
+        result.Add(new GameRealm()
         {
           Type = realmType,
           Locked = realmLocked,

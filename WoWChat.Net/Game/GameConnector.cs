@@ -1,5 +1,6 @@
 ﻿namespace WoWChat.Net.Game;
 
+using Common;
 using DotNetty.Buffers;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
@@ -17,6 +18,8 @@ public class GameConnector : IObservable<GameEvent>
   private readonly WowChatOptions _options;
   private readonly ILogger<GameConnector> _logger;
 
+  private GameRealm? _realm;
+  private byte[]? _sessionKey;
   private IChannel? _gameChannel;
 
   public GameConnector(
@@ -32,17 +35,20 @@ public class GameConnector : IObservable<GameEvent>
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
-  public async Task Connect(string gameServerHost, int gameServerPort)
+  public async Task Connect(GameRealm gameRealm, byte[] sessionKey)
   {
     if (_gameChannel != null && _gameChannel.Active)
     {
       throw new InvalidOperationException("Refusing to connect to game server. Already connected.");
     }
 
+    _realm = gameRealm ?? throw new ArgumentNullException(nameof(gameRealm));
+    _sessionKey = sessionKey ?? throw new ArgumentNullException(nameof(sessionKey));
+    _channelInitializer.SetConnectionOptions(_realm, _sessionKey);
+
     OnGameEvent(new GameConnectingEvent()
     {
-      Host = _options.RealmListHost,
-      Port = _options.RealmListPort,
+      Realm = _realm,
     });
 
     var bootstrap = new Bootstrap();
@@ -51,7 +57,7 @@ public class GameConnector : IObservable<GameEvent>
       .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(_options.ConnectTimeoutMs))
       .Option(ChannelOption.SoKeepalive, true)
       .Option(ChannelOption.Allocator, UnpooledByteBufferAllocator.Default)
-      .RemoteAddress(_options.RealmListHost, _options.RealmListPort)
+      .RemoteAddress(_realm.Host, _realm.Port)
       .Handler(_channelInitializer);
 
     try
@@ -72,9 +78,7 @@ public class GameConnector : IObservable<GameEvent>
       _gameChannel = connectTask.Result;
       OnGameEvent(new GameConnectedEvent()
       {
-        Name = _options.RealmName,
-        Host = gameServerHost,
-        Port = gameServerPort
+        Realm = _realm
       });
     }
     catch (Exception ex)

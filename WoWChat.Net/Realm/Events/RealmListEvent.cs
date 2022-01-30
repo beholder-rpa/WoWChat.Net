@@ -1,7 +1,9 @@
 ﻿namespace WoWChat.Net.Realm.Events
 {
+  using Common;
+
   public record RealmListEvent : RealmEvent
   {
-    public IList<Realm> RealmList { get; init; } = new List<Realm>();
+    public IList<GameRealm> RealmList { get; init; } = new List<GameRealm>();
   }
 }

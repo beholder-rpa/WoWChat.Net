@@ -20,20 +20,29 @@
     protected readonly ILogger<GameChannelInitializer> _logger;
 
     public GameChannelInitializer(
-      GamePacketHandler gamePacketHandler,
-      GamePacketDecoder gamePacketDecoder,
-      GamePacketEncoder gamePacketEncoder,
-      IdleStateCallback idleStateCallback,
       IOptionsSnapshot<WowChatOptions> options,
+      GamePacketHandlerResolver gamePacketHandlerResolver,
+      GamePacketDecoderResolver gamePacketDecoderResolver,
+      GamePacketEncoderResolver gamePacketEncoderResolver,
+      IdleStateCallback idleStateCallback,
       ILogger<GameChannelInitializer> logger
       )
     {
-      _gamePacketHandler = gamePacketHandler ?? throw new ArgumentNullException(nameof(gamePacketHandler));
-      _gamePacketDecoder = gamePacketDecoder ?? throw new ArgumentNullException(nameof(gamePacketDecoder));
-      _gamePacketEncoder = gamePacketEncoder ?? throw new ArgumentNullException(nameof(gamePacketEncoder));
-      _idleStateCallback = idleStateCallback ?? throw new ArgumentNullException(nameof(idleStateCallback));
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+      var expansion = _options.GetExpansion();
+
+      _gamePacketHandler = gamePacketHandlerResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketHandlerResolver));
+      _gamePacketDecoder = gamePacketDecoderResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketDecoderResolver));
+      _gamePacketEncoder = gamePacketEncoderResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketEncoderResolver));
+      _idleStateCallback = idleStateCallback ?? throw new ArgumentNullException(nameof(idleStateCallback));
+     
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public void SetConnectionOptions(GameRealm realm, byte[] sessionKey)
+    {
+      _gamePacketHandler.Realm = realm;
+      _gamePacketHandler.SessionKey = sessionKey;
     }
 
     protected override void InitChannel(TcpSocketChannel channel)

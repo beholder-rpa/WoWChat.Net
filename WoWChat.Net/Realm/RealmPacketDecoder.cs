@@ -40,7 +40,7 @@
 
         switch (_id)
         {
-          case (byte)RealmCommand.CMD_AUTH_LOGON_CHALLENGE:
+          case RealmCommand.CMD_AUTH_LOGON_CHALLENGE:
             if (input.ReadableBytes < 2)
             {
               input.ResetReaderIndex();
@@ -59,7 +59,7 @@
             }
             input.ResetReaderIndex();
             break;
-          case (byte)RealmCommand.CMD_AUTH_LOGON_PROOF:
+          case RealmCommand.CMD_AUTH_LOGON_PROOF:
             if (input.ReadableBytes < 1)
             {
               input.ResetReaderIndex();
@@ -69,7 +69,7 @@
             // size is error dependent
             input.MarkReaderIndex();
             var result1 = input.ReadByte();
-            if ((byte)RealmAuthResult.WOW_SUCCESS == result1)
+            if (RealmAuthResult.WOW_SUCCESS == result1)
             {
               _size = (_options.GetExpansion() == WoWExpansion.Vanilla) ? 25 : 31;
             }
@@ -81,7 +81,7 @@
             }
             input.ResetReaderIndex();
             break;
-          case (byte)RealmCommand.CMD_REALM_LIST:
+          case RealmCommand.CMD_REALM_LIST:
             if (input.ReadableBytes < 2)
             {
               input.ResetReaderIndex();
@@ -101,7 +101,7 @@
       var byteBuf = input.ReadBytes(_size);
       var packet = new Packet(_id, byteBuf);
 
-      _logger.LogDebug("RECV REALM PACKET: {id} - {byteBuf}", _id, BitConverter.ToString(byteBuf.GetArrayCopy()));
+      _logger.LogDebug("RECV REALM PACKET: {id} - {byteBuf}", BitConverter.ToString(BitConverter.GetBytes(_id).Reverse().ToArray(), 0, 2), BitConverter.ToString(byteBuf.GetArrayCopy()));
 
       output.Add(packet);
 

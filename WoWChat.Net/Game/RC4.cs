@@ -11,11 +11,6 @@
 
     public RC4(byte[] key)
     {
-      if (key.Length != STATE_LENGTH)
-      {
-        throw new ArgumentException($"Key length must be {STATE_LENGTH}");
-      }
-
       _state = new byte[STATE_LENGTH];
       SetupKey(_state, key);
     }

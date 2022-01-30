@@ -14,9 +14,9 @@
     {
     }
 
-    protected override IList<Realm> ParseRealmList(Packet packet)
+    protected override IList<GameRealm> ParseRealmList(Packet packet)
     {
-      var result = new List<Realm>();
+      var result = new List<GameRealm>();
       packet.ByteBuf.ReadIntLE(); // unknown
       var numRealms = packet.ByteBuf.ReadByte();
       for (int i = 0; i < numRealms; i++)
@@ -31,20 +31,11 @@
         var timeZone = packet.ByteBuf.ReadByte(); // timezone
         var realmId = packet.ByteBuf.ReadByte();
 
-        // BC/wotlk include build information in the packet
-        if ((realmFlags & 0x04) != 0)
-        {
-          var versionMajor = packet.ByteBuf.ReadByte();
-          var versionMinor = packet.ByteBuf.ReadByte();
-          var versionBugfix = packet.ByteBuf.ReadByte();
-          var build = packet.ByteBuf.ReadUnsignedShort();
-        }
-
         var addressTokens = address.Split(':');
         var host = addressTokens[0];
         var port = addressTokens.Length > 1 ? int.Parse(addressTokens[1]) : 8085;
 
-        result.Add(new Realm()
+        var realmInfo = new GameRealm()
         {
           Type = realmType,
           Locked = realmLocked,
@@ -56,7 +47,20 @@
           Characters = characters,
           TimeZone = timeZone,
           RealmId = realmId,
-        }); ;
+        };
+
+        // BC/wotlk include build information in the packet
+        if ((realmFlags & 0x04) != 0)
+        {
+          var versionMajor = packet.ByteBuf.ReadByte();
+          var versionMinor = packet.ByteBuf.ReadByte();
+          var versionBugfix = packet.ByteBuf.ReadByte();
+          var build = packet.ByteBuf.ReadUnsignedShort();
+
+          realmInfo = realmInfo with { Version = new Version(versionMajor, versionMinor, versionBugfix, build) };
+        }
+
+        result.Add(realmInfo);
       }
 
       return result;
