@@ -4,6 +4,6 @@
 
   public record RealmListEvent : RealmEvent
   {
-    public IList<GameRealm> RealmList { get; init; } = new List<GameRealm>();
+    public IList<GameServerInfo> RealmList { get; init; } = new List<GameServerInfo>();
   }
 }

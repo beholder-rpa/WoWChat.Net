@@ -23,8 +23,6 @@ public class RealmListPacketHandler : IPacketHandler<RealmEvent>
 
   public Action<RealmEvent>? EventCallback { get; set; }
 
-  public bool IsExpectedDisconnect { get; set; }
-
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {
     var realmList = ParseRealmList(msg);
@@ -32,20 +30,11 @@ public class RealmListPacketHandler : IPacketHandler<RealmEvent>
     {
       RealmList = realmList
     });
-
-    IsExpectedDisconnect = true;
-    ctx.CloseAsync().Wait();
-    EventCallback?.Invoke(new RealmDisconnectedEvent()
-    {
-      AutoReconnect = false,
-      IsExpected = true,
-      Reason = "Realm List Retrieved"
-    });
   }
 
-  protected virtual IList<GameRealm> ParseRealmList(Packet msg)
+  protected virtual IList<GameServerInfo> ParseRealmList(Packet msg)
   {
-    var result = new List<GameRealm>();
+    var result = new List<GameServerInfo>();
     msg.ByteBuf.ReadIntLE(); // unknown
     var numRealms = msg.ByteBuf.ReadByte();
     for (int i = 0; i < numRealms; i++)
@@ -71,7 +60,7 @@ public class RealmListPacketHandler : IPacketHandler<RealmEvent>
       // some servers "overflow" the port on purpose to dissuade rudimentary bots
       var port = addressTokens.Length > 1 ? int.Parse(addressTokens[1]) & 0xFFFF : 8085;
 
-      result.Add(new GameRealm()
+      result.Add(new GameServerInfo()
       {
         Type = realmType,
         Locked = realmLocked,

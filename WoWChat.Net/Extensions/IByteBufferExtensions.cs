@@ -13,6 +13,27 @@ public static class IByteBufferExtensions
     return array;
   }
 
+  public static ulong ReadPackedGuid(this IByteBuffer byteBuf)
+  {
+    var mask = byteBuf.ReadByte();
+
+    if (mask == 0)
+      return 0;
+
+    ulong res = 0;
+
+    var i = 0;
+    while (i < 8)
+    {
+      if ((mask & 1 << i) != 0)
+        res += (ulong)byteBuf.ReadByte() << (i * 8);
+
+      i++;
+    }
+
+    return res;
+  }
+
   public static void WriteUnsignedIntLE(this IByteBuffer byteBuf, uint data)
   {
     var dataBytes = BitConverter.GetBytes(data);

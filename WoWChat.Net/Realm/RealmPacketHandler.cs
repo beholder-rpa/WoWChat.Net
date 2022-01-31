@@ -12,17 +12,16 @@
   using System;
   using System.Collections.Concurrent;
   using System.Linq;
+  using System.Threading.Tasks;
 
   public class RealmPacketHandler : ChannelHandlerAdapter, IObservable<RealmEvent>
   {
     protected readonly WowChatOptions _options;
     protected readonly ILogger<RealmPacketHandler> _logger;
-    protected IDictionary<(int id, WoWExpansion? expansion), IPacketHandler<RealmEvent>> _packetHandlers = new Dictionary<(int id, WoWExpansion? expansion), IPacketHandler<RealmEvent>>();
+    protected IDictionary<int, IPacketHandler<RealmEvent>> _packetHandlers = new Dictionary<int, IPacketHandler<RealmEvent>>();
 
     private int _logonState = 0;
     private SRPClient? _srpClient;
-
-    private bool _isExpectedDisconnect = false;
 
     public RealmPacketHandler(IServiceProvider serviceProvider, IOptionsSnapshot<WowChatOptions> options, ILogger<RealmPacketHandler> logger)
     {
@@ -40,15 +39,15 @@
       }
 
       //Initialize the packet handlers
-      InitPacketHandlers(serviceProvider);
+      InitPacketHandlers(serviceProvider, _options.GetExpansion());
     }
 
     /// <summary>
-    /// Binds the realm packet handlers contained in the current app domain. Called in the constructor
+    /// Binds the realm packet handlers defined by the service provider. Called by the constructor
     /// </summary>
     /// <param name="serviceProvider"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void InitPacketHandlers(IServiceProvider serviceProvider)
+    private void InitPacketHandlers(IServiceProvider serviceProvider, WoWExpansion expansion)
     {
       // Init PacketHandlers
       var packetHandlerType = typeof(IPacketHandler<RealmEvent>);
@@ -64,29 +63,31 @@
         if (handlerType == default) continue;
 
         var packetHandlerAttributes = handlerType.GetCustomAttributes(false).OfType<PacketHandlerAttribute>();
-        var packetHandler = (IPacketHandler<RealmEvent>)serviceProvider.GetRequiredService(handlerType);
-        packetHandler.EventCallback = packetHandlerGameEventCallback;
 
         foreach (var packetHandlerAttribute in packetHandlerAttributes)
         {
-          if (_packetHandlers.ContainsKey((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion)))
+          if ((packetHandlerAttribute.Expansion & expansion) != expansion)
+          {
+            _logger.LogInformation($"Skipping {handlerType} for {expansion} (indicates {packetHandlerAttribute.Expansion})");
+            continue;
+          }
+
+          if (_packetHandlers.ContainsKey(packetHandlerAttribute.Id))
           {
             throw new InvalidOperationException($"A packet handler is already registered for packet id {packetHandlerAttribute.Id} ({BitConverter.ToString(packetHandlerAttribute.Id.ToBytes())}), expansion: {packetHandlerAttribute.Expansion}");
           }
-          _packetHandlers.Add((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion), packetHandler);
+
+          var packetHandler = (IPacketHandler<RealmEvent>)serviceProvider.GetRequiredService(handlerType);
+          packetHandler.EventCallback = packetHandlerGameEventCallback;
+
+          _packetHandlers.Add(packetHandlerAttribute.Id, packetHandler);
         }
       }
     }
 
     public override void ChannelInactive(IChannelHandlerContext context)
     {
-      if (_isExpectedDisconnect == false)
-      {
-        OnRealmEvent(new RealmDisconnectedEvent()
-        {
-          IsExpected = false,
-        });
-      }
+      OnRealmEvent(new RealmDisconnectedEvent());
 
       base.ChannelInactive(context);
     }
@@ -115,37 +116,30 @@
 
     protected virtual void ChannelParse(IChannelHandlerContext ctx, Packet msg)
     {
-      var key = (msg.Id, _options.GetExpansion());
-      var genericKey = (msg.Id, WoWExpansion.All);
-
       switch (msg.Id)
       {
         case RealmCommand.CMD_AUTH_LOGON_CHALLENGE when _logonState == 0:
-          if (_packetHandlers[genericKey] is not LogonAuthChallengePacketHandler authChallengePacketHandler)
+          if (_packetHandlers[RealmCommand.CMD_AUTH_LOGON_CHALLENGE] is not LogonAuthChallengePacketHandler authChallengePacketHandler)
           {
-            throw new InvalidOperationException($"Unable to locate LogonAuthChallengePacketHandler for {genericKey}");
+            throw new InvalidOperationException($"Unable to locate LogonAuthChallengePacketHandler for {RealmCommand.CMD_AUTH_LOGON_CHALLENGE}");
           }
           authChallengePacketHandler.HandlePacket(ctx, msg);
           _srpClient = authChallengePacketHandler.SRPClient;
           break;
         case RealmCommand.CMD_AUTH_LOGON_PROOF when _logonState == 1:
-          if (_packetHandlers[genericKey] is not LogonAuthProofPacketHandler authProofPacketHandler)
+          if (_packetHandlers[RealmCommand.CMD_AUTH_LOGON_PROOF] is not LogonAuthProofPacketHandler authProofPacketHandler)
           {
-            throw new InvalidOperationException($"Unable to locate LogonAuthProofPacketHandler for {genericKey}");
+            throw new InvalidOperationException($"Unable to locate LogonAuthProofPacketHandler for {RealmCommand.CMD_AUTH_LOGON_PROOF}");
           }
           authProofPacketHandler.SRPClient = _srpClient;
-          authProofPacketHandler.IsExpectedDisconnect = _isExpectedDisconnect;
           authProofPacketHandler.HandlePacket(ctx, msg);
-          _isExpectedDisconnect = _isExpectedDisconnect || authProofPacketHandler.IsExpectedDisconnect;
           break;
         case RealmCommand.CMD_REALM_LIST when _logonState == 2:
-          if (_packetHandlers[key] is not RealmListPacketHandler realmListPacketHandler)
+          if (_packetHandlers[RealmCommand.CMD_REALM_LIST] is not RealmListPacketHandler realmListPacketHandler)
           {
-            throw new InvalidOperationException($"Unable to locate RealmListPacketHandler for {key}");
+            throw new InvalidOperationException($"Unable to locate RealmListPacketHandler for {RealmCommand.CMD_REALM_LIST}");
           }
-          realmListPacketHandler.IsExpectedDisconnect = _isExpectedDisconnect;
           realmListPacketHandler.HandlePacket(ctx, msg);
-          _isExpectedDisconnect = _isExpectedDisconnect || realmListPacketHandler.IsExpectedDisconnect;
           break;
         default:
           _logger.LogDebug("Received packet {commandId} in unexpected logonState {logonState}", msg.Id, _logonState);

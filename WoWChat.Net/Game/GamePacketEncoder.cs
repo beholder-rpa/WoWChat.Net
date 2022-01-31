@@ -5,9 +5,9 @@ using DotNetty.Buffers;
 using DotNetty.Codecs;
 using DotNetty.Transport.Channels;
 using Extensions;
-using Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Options;
 
 public class GamePacketEncoder : MessageToByteEncoder<Packet>
 {
@@ -43,8 +43,11 @@ public class GamePacketEncoder : MessageToByteEncoder<Packet>
       header = _crypt.Encrypt(ms.ToArray());
     }
 
-    _logger.LogDebug("SEND GAME PACKET HEADER: {header}", BitConverter.ToString(header));
-    _logger.LogDebug("SEND GAME PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+    if (_logger.IsEnabled(LogLevel.Debug))
+    {
+      _logger.LogDebug("SEND GAME PACKET HEADER: {header}", BitConverter.ToString(header));
+      _logger.LogDebug("SEND GAME PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+    }
 
     output.WriteBytes(header);
     output.WriteBytes(message.ByteBuf);

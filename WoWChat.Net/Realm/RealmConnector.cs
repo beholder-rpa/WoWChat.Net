@@ -1,9 +1,13 @@
 ﻿namespace WoWChat.Net.Realm;
+
+using Common;
 using DotNetty.Buffers;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Events;
+using Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Options;
@@ -18,14 +22,72 @@ public class RealmConnector : IObservable<RealmEvent>
   private readonly WowChatOptions _options;
   private readonly ILogger<RealmConnector> _logger;
 
+  protected IDictionary<int, IPacketCommand<RealmEvent>> _packetCommands = new Dictionary<int, IPacketCommand<RealmEvent>>();
+
   private IChannel? _realmChannel;
 
-  public RealmConnector(RealmChannelInitializer realmChannelInitializer, IEventLoopGroup group, IOptionsSnapshot<WowChatOptions> options, ILogger<RealmConnector> logger)
+  public RealmConnector(
+    IServiceProvider serviceProvider,
+    RealmChannelInitializer realmChannelInitializer,
+    IEventLoopGroup group,
+    IOptionsSnapshot<WowChatOptions> options,
+    ILogger<RealmConnector> logger
+    )
   {
     _channelInitializer = realmChannelInitializer ?? throw new ArgumentNullException(nameof(realmChannelInitializer));
     _group = group ?? throw new ArgumentNullException(nameof(group));
     _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+    InitPacketCommands(serviceProvider, _options.GetExpansion());
+  }
+
+  public IEventLoopGroup Group { get { return _group; } }
+
+  public RealmPacketHandler RealmPacketHandler { get { return _channelInitializer.RealmPacketHandler; } }
+
+  /// <summary>
+  /// Binds the game packet commands defined by the service provider. Called by the constructor
+  /// </summary>
+  /// <param name="serviceProvider"></param>
+  /// <exception cref="InvalidOperationException"></exception>
+  private void InitPacketCommands(IServiceProvider serviceProvider, WoWExpansion expansion)
+  {
+    // Init PacketCommands
+    var packetCommandType = typeof(IPacketCommand<RealmEvent>);
+    var packetCommandAttributeType = typeof(PacketCommandAttribute);
+    var handlerTypes = serviceProvider.GetServices(packetCommandType)
+      .Select(o => o?.GetType())
+      .Where(p => packetCommandType.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetCommandAttributeType));
+
+    var packetCommandRealmEventCallback = new Action<RealmEvent>((gameEvent) => OnRealmEvent(gameEvent));
+
+    foreach (var handlerType in handlerTypes)
+    {
+      if (handlerType == default) continue;
+
+      var packetCommandAttributes = handlerType.GetCustomAttributes(false).OfType<PacketCommandAttribute>();
+
+      foreach (var packetCommandAttribute in packetCommandAttributes)
+      {
+        if ((packetCommandAttribute.Expansion & expansion) != expansion)
+        {
+          _logger.LogInformation($"Skipping {handlerType} for {expansion} (indicates {packetCommandAttribute.Expansion})");
+          continue;
+        }
+
+        if (_packetCommands.ContainsKey(packetCommandAttribute.Id))
+        {
+          throw new InvalidOperationException($"A packet command is already registered for packet id {packetCommandAttribute.Id} ({BitConverter.ToString(packetCommandAttribute.Id.ToBytes())}), expansion: {packetCommandAttribute.Expansion}");
+        }
+
+        var packetCommand = (IPacketCommand<RealmEvent>)serviceProvider.GetRequiredService(handlerType);
+        packetCommand.CommandId = packetCommandAttribute.Id;
+        packetCommand.EventCallback = packetCommandRealmEventCallback;
+
+        _packetCommands.Add(packetCommandAttribute.Id, packetCommand);
+      }
+    }
   }
 
   public async Task Connect()
@@ -76,11 +138,46 @@ public class RealmConnector : IObservable<RealmEvent>
     catch (Exception ex)
     {
       _logger.LogError("Failed to connect to realm server! {message}", ex.Message);
-      OnRealmEvent(new RealmDisconnectedEvent()
+      OnRealmEvent(new RealmErrorEvent()
       {
-        Reason = $"Failed to connect to realm server! {ex.Message}"
+        Message = $"Failed to connect to realm server! {ex.Message}"
       });
     }
+  }
+
+  /// <summary>
+  /// For the configured expansion returns a command object.
+  /// </summary>
+  /// <typeparam name="T">Packet Command Type</typeparam>
+  /// <param name="commandId"></param>
+  /// <returns></returns>
+  public T GetCommand<T>()
+    where T : IPacketCommand<RealmEvent>
+  {
+    var result = _packetCommands.Values.FirstOrDefault(command => typeof(T).IsInstanceOfType(command));
+    if (result == null)
+      throw new InvalidOperationException($"Unable to locate a packet command for {typeof(T)}");
+
+    return (T)result;
+  }
+
+  public async Task RunCommand<T>()
+    where T : IPacketCommand<RealmEvent>
+  {
+    var command = GetCommand<T>();
+    await SendCommand(command);
+  }
+
+  public async Task SendCommand<T>(T command)
+    where T : IPacketCommand<RealmEvent>
+  {
+    if (command == null) throw new ArgumentNullException(nameof(command));
+
+    if (_realmChannel == null || _realmChannel.Active == false)
+      throw new InvalidOperationException("A realm connection has not been established or is terminated.");
+
+    var packet = await command.CreateCommandPacket(_realmChannel.Allocator);
+    await _realmChannel.WriteAndFlushAsync(packet);
   }
 
   public async Task Disconnect()
@@ -90,7 +187,9 @@ public class RealmConnector : IObservable<RealmEvent>
       return;
     }
 
+    await _realmChannel.DisconnectAsync();
     await _realmChannel.CloseAsync();
+    _realmChannel = null;
   }
 
   #region IObservable<RealmEvent>

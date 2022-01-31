@@ -6,19 +6,16 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Options;
 
-[PacketHandler(RealmCommand.CMD_REALM_LIST, WoWExpansion.TBC)]
-[PacketHandler(RealmCommand.CMD_REALM_LIST, WoWExpansion.WotLK)]
-[PacketHandler(RealmCommand.CMD_REALM_LIST, WoWExpansion.Cataclysm)]
-[PacketHandler(RealmCommand.CMD_REALM_LIST, WoWExpansion.MoP)]
+[PacketHandler(RealmCommand.CMD_REALM_LIST, WoWExpansion.TBC | WoWExpansion.WotLK | WoWExpansion.Cataclysm | WoWExpansion.MoP)]
 public class RealmListPacketHandlerTBC : RealmListPacketHandler
 {
   public RealmListPacketHandlerTBC(IOptionsSnapshot<WowChatOptions> options, ILogger<RealmListPacketHandler> logger) : base(options, logger)
   {
   }
 
-  protected override IList<GameRealm> ParseRealmList(Packet msg)
+  protected override IList<GameServerInfo> ParseRealmList(Packet msg)
   {
-    var result = new List<GameRealm>();
+    var result = new List<GameServerInfo>();
     msg.ByteBuf.ReadIntLE(); // unknown
     var numRealms = msg.ByteBuf.ReadByte();
     for (int i = 0; i < numRealms; i++)
@@ -37,7 +34,7 @@ public class RealmListPacketHandlerTBC : RealmListPacketHandler
       var host = addressTokens[0];
       var port = addressTokens.Length > 1 ? int.Parse(addressTokens[1]) : 8085;
 
-      var realmInfo = new GameRealm()
+      var realmInfo = new GameServerInfo()
       {
         Type = realmType,
         Locked = realmLocked,

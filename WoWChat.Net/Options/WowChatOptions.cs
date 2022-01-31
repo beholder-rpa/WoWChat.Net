@@ -29,6 +29,8 @@
     /// </summary>
     public string AccountPassword { get; set; } = string.Empty;
 
+    public string CharacterName { get; set; } = string.Empty;
+
     public Platform Platform { get; set; } = Platform.Windows;
 
     public string Locale { get; set; } = "enUS";
@@ -42,6 +44,8 @@
     public int ReceiveTimeoutMs { get; set; } = 10000;
 
     public int SendTimeoutMs { get; set; } = 10000;
+
+    public FilterOptions Filters { get; set; } = new FilterOptions();
 
     public WoWExpansion GetExpansion()
     {

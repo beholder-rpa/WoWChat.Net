@@ -4,7 +4,7 @@ using Common;
 
 public record GameConnectingEvent : GameEvent
 {
-  public GameRealm Realm { get; init; } = new GameRealm();
+  public GameServerInfo GameServer { get; init; } = new GameServerInfo();
 
   public int Port { get; init; } = 8085;
 

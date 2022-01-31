@@ -1,12 +1,11 @@
 ﻿namespace WoWChat.Net.Common;
 
 using DotNetty.Transport.Channels;
-using Game.Events;
 
 public interface IPacketHandler<T>
 {
   /// <summary>
-  /// Gets or sets a callback that the packet handler will use to publish game events.
+  /// Gets or sets a callback that the packet handler can use to publish events.
   /// </summary>
   Action<T>? EventCallback { get; set; }
 

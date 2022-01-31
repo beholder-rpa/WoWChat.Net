@@ -1,8 +1,8 @@
 ﻿namespace WoWChat.Net.Game;
 
-using Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Options;
 
 public class GamePacketEncoderCataclysm : GamePacketEncoder
 {

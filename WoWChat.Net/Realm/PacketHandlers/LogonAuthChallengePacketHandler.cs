@@ -52,7 +52,6 @@ public class LogonAuthChallengePacketHandler : IPacketHandler<RealmEvent>
       {
         Message = $"Error Message: {realmMessage}"
       });
-      ctx.CloseAsync().Wait();
       EventCallback?.Invoke(new RealmErrorEvent()
       {
         Message = realmMessage,
@@ -70,25 +69,24 @@ public class LogonAuthChallengePacketHandler : IPacketHandler<RealmEvent>
     var securityFlag = msg.ByteBuf.ReadByte();
     if (securityFlag != 0)
     {
-      _logger.LogDebug("Recieved non-zero security flag: {securityFlag}", securityFlag);
+      _logger.LogDebug("Received non-zero security flag: {securityFlag}", securityFlag);
       EventCallback?.Invoke(new RealmErrorEvent()
       {
         Message = $"Two factor authentication is enabled for this account. Please disable it or use another account."
       });
-      ctx.CloseAsync().Wait();
       return;
     }
 
-      SRPClient = new SRPClient(
-      _options.AccountName,
-      _options.AccountPassword,
-      B,
-      g,
-      n,
-      salt,
-      nonce,
-      InitialKeyPair
-      );
+    SRPClient = new SRPClient(
+    _options.AccountName,
+    _options.AccountPassword,
+    B,
+    g,
+    n,
+    salt,
+    nonce,
+    InitialKeyPair
+    );
 
     var aArray = SRPClient.A.ToCleanByteArray();
 

@@ -35,11 +35,12 @@
       _gamePacketDecoder = gamePacketDecoderResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketDecoderResolver));
       _gamePacketEncoder = gamePacketEncoderResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketEncoderResolver));
       _idleStateCallback = idleStateCallback ?? throw new ArgumentNullException(nameof(idleStateCallback));
-     
+
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+    public GamePacketHandler GamePacketHandler { get { return _gamePacketHandler; } }
 
-    public void SetConnectionOptions(GameRealm realm, byte[] sessionKey)
+    public void SetConnectionOptions(GameServerInfo realm, byte[] sessionKey)
     {
       _gamePacketHandler.Realm = realm;
       _gamePacketHandler.SessionKey = sessionKey;

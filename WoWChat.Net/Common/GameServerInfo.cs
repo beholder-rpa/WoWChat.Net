@@ -1,6 +1,6 @@
 ﻿namespace WoWChat.Net.Common;
 
-public record GameRealm
+public record GameServerInfo
 {
   public byte Type { get; init; }
 

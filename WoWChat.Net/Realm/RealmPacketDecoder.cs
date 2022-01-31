@@ -101,7 +101,10 @@
       var byteBuf = input.ReadBytes(_size);
       var packet = new Packet(_id, byteBuf);
 
-      _logger.LogDebug("RECV REALM PACKET: {id} - {byteBuf}", BitConverter.ToString(BitConverter.GetBytes(_id).Reverse().ToArray(), 0, 2), BitConverter.ToString(byteBuf.GetArrayCopy()));
+      if (_logger.IsEnabled(LogLevel.Debug))
+      {
+        _logger.LogDebug("RECV REALM PACKET: {id} - {byteBuf}", BitConverter.ToString(BitConverter.GetBytes(_id).Reverse().ToArray(), 0, 2), BitConverter.ToString(byteBuf.GetArrayCopy()));
+      }
 
       output.Add(packet);
 

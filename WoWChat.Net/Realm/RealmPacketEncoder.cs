@@ -19,7 +19,11 @@
 
     protected override void Encode(IChannelHandlerContext context, Packet message, IByteBuffer output)
     {
-      _logger.LogDebug("SEND REALM PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+      if (_logger.IsEnabled(LogLevel.Debug))
+      {
+        _logger.LogDebug("SEND REALM PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+      }
+      
 
       output.WriteByte(message.Id);
       output.WriteBytes(message.ByteBuf);

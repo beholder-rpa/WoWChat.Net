@@ -1,6 +1,5 @@
-﻿namespace WoWChat.Net.Game.Events
+﻿namespace WoWChat.Net.Game.Events;
+
+public record GameLoggedInEvent : GameEvent
 {
-  public record GameLoggedInEvent : GameEvent
-  {
-  }
 }

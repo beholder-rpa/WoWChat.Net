@@ -6,23 +6,28 @@ using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Events;
+using Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Options;
 using System.Collections.Concurrent;
 
-public class GameConnector : IObservable<GameEvent>
+public partial class GameConnector : IObservable<GameEvent>
 {
   private readonly GameChannelInitializer _channelInitializer;
   private readonly IEventLoopGroup _group;
   private readonly WowChatOptions _options;
   private readonly ILogger<GameConnector> _logger;
 
-  private GameRealm? _realm;
+  protected IDictionary<int, IPacketCommand<GameEvent>> _packetCommands = new Dictionary<int, IPacketCommand<GameEvent>>();
+
+  private GameServerInfo? _gameServer;
   private byte[]? _sessionKey;
   private IChannel? _gameChannel;
 
   public GameConnector(
+    IServiceProvider serviceProvider,
     GameChannelInitializer gameChannelInitializer,
     IEventLoopGroup group,
     IOptionsSnapshot<WowChatOptions> options,
@@ -33,22 +38,82 @@ public class GameConnector : IObservable<GameEvent>
     _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     _group = group ?? throw new ArgumentNullException(nameof(group));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+    InitPacketCommands(serviceProvider, _options.GetExpansion());
   }
 
-  public async Task Connect(GameRealm gameRealm, byte[] sessionKey)
+  public IEventLoopGroup Group { get { return _group; } }
+
+  public GamePacketHandler GamePacketHandler { get { return _channelInitializer.GamePacketHandler; } }
+
+  /// <summary>
+  /// Binds the game packet commands defined by the service provider. Called by the constructor
+  /// </summary>
+  /// <param name="serviceProvider"></param>
+  /// <exception cref="InvalidOperationException"></exception>
+  private void InitPacketCommands(IServiceProvider serviceProvider, WoWExpansion expansion)
   {
+    // Init PacketCommands
+    var packetCommandType = typeof(IPacketCommand<GameEvent>);
+    var packetCommandAttributeType = typeof(PacketCommandAttribute);
+    var handlerTypes = serviceProvider.GetServices(packetCommandType)
+      .Select(o => o?.GetType())
+      .Where(p => packetCommandType.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetCommandAttributeType));
+
+    var packetCommandGameEventCallback = new Action<GameEvent>((gameEvent) => OnGameEvent(gameEvent));
+
+    foreach (var handlerType in handlerTypes)
+    {
+      if (handlerType == default) continue;
+
+      var packetCommandAttributes = handlerType.GetCustomAttributes(false).OfType<PacketCommandAttribute>();
+
+      foreach (var packetCommandAttribute in packetCommandAttributes)
+      {
+        if ((packetCommandAttribute.Expansion & expansion) != expansion)
+        {
+          _logger.LogInformation($"Skipping {handlerType} for {expansion} (indicates {packetCommandAttribute.Expansion})");
+          continue;
+        }
+
+        if (_packetCommands.ContainsKey(packetCommandAttribute.Id))
+        {
+          throw new InvalidOperationException($"A packet command is already registered for packet id {packetCommandAttribute.Id} ({BitConverter.ToString(packetCommandAttribute.Id.ToBytes())}), expansion: {packetCommandAttribute.Expansion}");
+        }
+
+        var packetCommand = (IPacketCommand<GameEvent>)serviceProvider.GetRequiredService(handlerType);
+        packetCommand.CommandId = packetCommandAttribute.Id;
+        packetCommand.EventCallback = packetCommandGameEventCallback;
+
+        _packetCommands.Add(packetCommandAttribute.Id, packetCommand);
+      }
+    }
+  }
+
+  public async Task Connect(GameServerInfo gameServer, byte[] sessionKey)
+  {
+    if (gameServer == null)
+    {
+      throw new ArgumentNullException(nameof(gameServer));
+    }
+
+    if (sessionKey == null || sessionKey.Length != 40)
+    {
+      throw new ArgumentNullException(nameof(sessionKey));
+    }
+
     if (_gameChannel != null && _gameChannel.Active)
     {
       throw new InvalidOperationException("Refusing to connect to game server. Already connected.");
     }
 
-    _realm = gameRealm ?? throw new ArgumentNullException(nameof(gameRealm));
+    _gameServer = gameServer ?? throw new ArgumentNullException(nameof(gameServer));
     _sessionKey = sessionKey ?? throw new ArgumentNullException(nameof(sessionKey));
-    _channelInitializer.SetConnectionOptions(_realm, _sessionKey);
+    _channelInitializer.SetConnectionOptions(_gameServer, _sessionKey);
 
     OnGameEvent(new GameConnectingEvent()
     {
-      Realm = _realm,
+      GameServer = _gameServer,
     });
 
     var bootstrap = new Bootstrap();
@@ -57,7 +122,7 @@ public class GameConnector : IObservable<GameEvent>
       .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(_options.ConnectTimeoutMs))
       .Option(ChannelOption.SoKeepalive, true)
       .Option(ChannelOption.Allocator, UnpooledByteBufferAllocator.Default)
-      .RemoteAddress(_realm.Host, _realm.Port)
+      .RemoteAddress(_gameServer.Host, _gameServer.Port)
       .Handler(_channelInitializer);
 
     try
@@ -78,22 +143,64 @@ public class GameConnector : IObservable<GameEvent>
       _gameChannel = connectTask.Result;
       OnGameEvent(new GameConnectedEvent()
       {
-        Realm = _realm
+        GameServerInfo = _gameServer
       });
     }
     catch (Exception ex)
     {
       _logger.LogError("Failed to connect to game server! {message}", ex.Message);
-      OnGameEvent(new GameDisconnectedEvent()
+      OnGameEvent(new GameErrorEvent()
       {
-        Reason = $"Failed to connect to game server! {ex.Message}"
+        Message = $"Failed to connect to game server! {ex.Message}"
       });
     }
   }
 
-  public Task Disconnect()
+  /// <summary>
+  /// For the configured expansion returns a command object.
+  /// </summary>
+  /// <typeparam name="T">Packet Command Type</typeparam>
+  /// <param name="commandId"></param>
+  /// <returns></returns>
+  public T GetCommand<T>()
+    where T : IPacketCommand<GameEvent>
   {
-    return Task.CompletedTask;
+    var result = _packetCommands.Values.FirstOrDefault(command => typeof(T).IsInstanceOfType(command));
+    if (result == null)
+      throw new InvalidOperationException($"Unable to locate a packet command for {typeof(T)}");
+
+    return (T)result;
+  }
+
+  public async Task RunCommand<T>()
+    where T : IPacketCommand<GameEvent>
+  {
+    var command = GetCommand<T>();
+    await SendCommand(command);
+  }
+
+  public async Task SendCommand<T>(T command)
+    where T : IPacketCommand<GameEvent>
+  {
+    if (command == null) throw new ArgumentNullException(nameof(command));
+
+    if (_gameChannel == null || _gameChannel.Active == false)
+      throw new InvalidOperationException("A game connection has not been established or is terminated.");
+
+    var packet = await command.CreateCommandPacket(_gameChannel.Allocator);
+    await _gameChannel.WriteAndFlushAsync(packet);
+  }
+
+  public async Task Disconnect()
+  {
+    if (_group.IsShuttingDown || _group.IsShutdown || _group.IsTerminated || _gameChannel == null)
+    {
+      return;
+    }
+
+    await _gameChannel.DisconnectAsync();
+    await _gameChannel.CloseAsync();
+    _gameChannel = null;
   }
 
   #region IObservable<GameEvent>

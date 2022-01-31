@@ -5,9 +5,9 @@
   using DotNetty.Codecs;
   using DotNetty.Transport.Channels;
   using Extensions;
-  using Options;
   using Microsoft.Extensions.Logging;
   using Microsoft.Extensions.Options;
+  using Options;
   using System;
   using System.Collections.Generic;
 
@@ -60,7 +60,10 @@
 
       var packet = new Packet(newId, decompressed);
 
-      _logger.LogDebug("RECV GAME PACKET: {id} - {byteBuf}", BitConverter.ToString(newId.ToBytes()), BitConverter.ToString(decompressed.GetArrayCopy()));
+      if (_logger.IsEnabled(LogLevel.Debug))
+      {
+        _logger.LogDebug("RECV GAME PACKET: {id} - {byteBuf}", BitConverter.ToString(newId.ToBytes()), BitConverter.ToString(decompressed.GetArrayCopy()));
+      }
 
       output.Add(packet);
 
@@ -69,7 +72,8 @@
       _size = 0;
     }
 
-    protected virtual (int, int) ParseGameHeader(IByteBuffer input) {
+    protected virtual (int, int) ParseGameHeader(IByteBuffer input)
+    {
       var size = input.ReadShort() - 2;
       var id = input.ReadShortLE();
       return (id, size);

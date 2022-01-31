@@ -37,6 +37,8 @@
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    public RealmPacketHandler RealmPacketHandler { get { return _realmPacketHandler; } }
+
     protected override void InitChannel(TcpSocketChannel channel)
     {
       channel.Pipeline.AddLast(

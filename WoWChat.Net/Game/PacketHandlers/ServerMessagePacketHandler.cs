@@ -7,17 +7,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Options;
 
-[PacketHandler(WorldCommand.SMSG_SERVER_MESSAGE, WoWExpansion.Vanilla)]
-[PacketHandler(WorldCommand.SMSG_SERVER_MESSAGE, WoWExpansion.TBC)]
-[PacketHandler(WorldCommand.SMSG_SERVER_MESSAGE, WoWExpansion.WotLK)]
+[PacketHandler(WorldCommand.SMSG_SERVER_MESSAGE, WoWExpansion.Vanilla | WoWExpansion.TBC | WoWExpansion.WotLK)]
 //[PacketHandler(WorldCommandCataclysm.SMSG_SERVER_MESSAGE, WoWExpansion.Cataclysm)]
 //[PacketHandler(WorldCommandMoP.SMSG_SERVER_MESSAGE, WoWExpansion.MoP)]
 public class ServerMessagePacketHandler : IPacketHandler<GameEvent>
 {
   protected readonly WowChatOptions _options;
-  protected readonly ILogger<ServerMessagePacketHandler> _logger;
+  protected readonly ILogger<ServerChatMessagePacketHandler> _logger;
 
-  public ServerMessagePacketHandler(IOptionsSnapshot<WowChatOptions> options, ILogger<ServerMessagePacketHandler> logger)
+  public ServerMessagePacketHandler(IOptionsSnapshot<WowChatOptions> options, ILogger<ServerChatMessagePacketHandler> logger)
   {
     _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));

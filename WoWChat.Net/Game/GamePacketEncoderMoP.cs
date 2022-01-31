@@ -37,8 +37,11 @@ public class GamePacketEncoderMoP : GamePacketEncoder
       header = _crypt.Encrypt(ms.ToArray());
     }
 
-    _logger.LogDebug("SEND GAME PACKET HEADER: {header}", BitConverter.ToString(header));
-    _logger.LogDebug("SEND GAME PACKET: {id} - {byteBuf}", message.Id, BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+    if (_logger.IsEnabled(LogLevel.Debug))
+    {
+      _logger.LogDebug("SEND GAME PACKET HEADER: {header}", BitConverter.ToString(header));
+      _logger.LogDebug("SEND GAME PACKET: {id} - {byteBuf}", message.Id, BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
+    }
 
     output.WriteBytes(header);
     output.WriteBytes(message.ByteBuf);

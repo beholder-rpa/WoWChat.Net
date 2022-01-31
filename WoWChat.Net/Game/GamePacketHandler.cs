@@ -11,18 +11,14 @@
   using Options;
   using System;
   using System.Collections.Concurrent;
-  using System.Timers;
 
   public partial class GamePacketHandler : ChannelHandlerAdapter, IObservable<GameEvent>
   {
     protected readonly WowChatOptions _options;
     protected readonly GameHeaderCrypt _headerCrypt;
     protected readonly ILogger<GamePacketHandler> _logger;
-    protected readonly Timer _pingTimer;
-    protected readonly Random _random = new();
 
-    protected int _pingId = 0;
-    protected IDictionary<(int id, WoWExpansion? expansion), IPacketHandler<GameEvent>> _packetHandlers = new Dictionary<(int id, WoWExpansion? expansion), IPacketHandler<GameEvent>>();
+    protected IDictionary<int, IPacketHandler<GameEvent>> _packetHandlers = new Dictionary<int, IPacketHandler<GameEvent>>();
     protected IChannelHandlerContext? _context;
 
     public GamePacketHandler(
@@ -41,17 +37,10 @@
       }
 
       //Initialize the packet handlers
-      InitPacketHandlers(serviceProvider);
-
-      _pingTimer = new Timer(30)
-      {
-        AutoReset = true,
-        Enabled = false,
-      };
-      _pingTimer.Elapsed += RunPingExecutor;
+      InitPacketHandlers(serviceProvider, _options.GetExpansion());
     }
 
-    public GameRealm? Realm { get; set; } = null;
+    public GameServerInfo? Realm { get; set; } = null;
 
     public byte[]? SessionKey { get; set; } = null;
 
@@ -63,11 +52,11 @@
     }
 
     /// <summary>
-    /// Binds the game packet handlers contained in the current app domain. Called in the constructor
+    /// Binds the game packet handlers defined by the service provider. Called by the constructor
     /// </summary>
     /// <param name="serviceProvider"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void InitPacketHandlers(IServiceProvider serviceProvider)
+    private void InitPacketHandlers(IServiceProvider serviceProvider, WoWExpansion expansion)
     {
       // Init PacketHandlers
       var packetHandlerType = typeof(IPacketHandler<GameEvent>);
@@ -83,42 +72,26 @@
         if (handlerType == default) continue;
 
         var packetHandlerAttributes = handlerType.GetCustomAttributes(false).OfType<PacketHandlerAttribute>();
-        var packetHandler = (IPacketHandler<GameEvent>)serviceProvider.GetRequiredService(handlerType);
-        packetHandler.EventCallback = packetHandlerGameEventCallback;
 
         foreach (var packetHandlerAttribute in packetHandlerAttributes)
         {
-          if (_packetHandlers.ContainsKey((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion)))
+          if ((packetHandlerAttribute.Expansion & expansion) != expansion)
+          {
+            _logger.LogInformation($"Skipping {handlerType} for {expansion} (indicates {packetHandlerAttribute.Expansion})");
+            continue;
+          }
+
+          if (_packetHandlers.ContainsKey(packetHandlerAttribute.Id))
           {
             throw new InvalidOperationException($"A packet handler is already registered for packet id {packetHandlerAttribute.Id} ({BitConverter.ToString(packetHandlerAttribute.Id.ToBytes())}), expansion: {packetHandlerAttribute.Expansion}");
           }
-          _packetHandlers.Add((packetHandlerAttribute.Id, packetHandlerAttribute.Expansion), packetHandler);
+
+          var packetHandler = (IPacketHandler<GameEvent>)serviceProvider.GetRequiredService(handlerType);
+          packetHandler.EventCallback = packetHandlerGameEventCallback;
+
+          _packetHandlers.Add(packetHandlerAttribute.Id, packetHandler);
         }
       }
-    }
-
-    // Vanilla does not have a keep alive packet
-    protected virtual void RunKeepAliveExecutor()
-    {
-    }
-
-    protected virtual void RunPingExecutor(object? sender, ElapsedEventArgs e)
-    {
-      if (_context == null || !_context.Channel.Active)
-      {
-        _logger.LogDebug("Attempted to ping while the context/channel is not open. Stopping ping timer.");
-        _pingTimer.Enabled = false;
-        return;
-      }
-
-      var latency = _random.Next(50) + 90;
-
-      var byteBuf = _context.Allocator.Buffer(8, 8);
-      byteBuf.WriteIntLE(_pingId);
-      byteBuf.WriteIntLE(latency);
-
-      _context.WriteAndFlushAsync(new Packet(WorldCommand.CMSG_PING, byteBuf)).Wait();
-      _pingId += 1;
     }
 
     public override void ChannelActive(IChannelHandlerContext context)
@@ -143,32 +116,32 @@
 
     protected virtual void ChannelParse(IChannelHandlerContext context, Packet msg)
     {
-      var key = (msg.Id, _options.GetExpansion());
-      var genericKey = (msg.Id, WoWExpansion.All);
-
       switch (msg.Id)
       {
         case WorldCommand.SMSG_AUTH_CHALLENGE:
-          if (_packetHandlers[key] is not ServerAuthChallengePacketHandler authChallengePacketHandler)
+          if (_packetHandlers[msg.Id] is not ServerAuthChallengePacketHandler authChallengePacketHandler)
           {
-            throw new InvalidOperationException($"Unable to locate ServerAuthChallengePacketHandler for {key.Id}");
+            throw new InvalidOperationException($"Unable to locate ServerAuthChallengePacketHandler for {msg.Id}");
           }
           authChallengePacketHandler.Realm = Realm;
           authChallengePacketHandler.SessionKey = SessionKey;
           authChallengePacketHandler.HandlePacket(context, msg);
           break;
         default:
-          if (_packetHandlers.ContainsKey(key))
+          if (_packetHandlers.ContainsKey(msg.Id))
           {
-            _packetHandlers[key].HandlePacket(context, msg);
+            _packetHandlers[msg.Id].HandlePacket(context, msg);
           }
-          else if (_packetHandlers.ContainsKey(genericKey))
+          else if (IgnoredOpcodes.Contains(msg.Id))
           {
-            _packetHandlers[genericKey].HandlePacket(context, msg);
+            if (_logger.IsEnabled(LogLevel.Trace))
+            {
+              _logger.LogTrace("Ignored command {id}.", BitConverter.ToString(msg.Id.ToBytes()));
+            }
           }
           else
           {
-            _logger.LogWarning("A packet handler for command {id} for expansion {expansion} could not be located.", BitConverter.ToString(msg.Id.ToBytes()), key.Item2.ToString());
+            _logger.LogWarning("A packet handler for command {id} for expansion {expansion} could not be located.", BitConverter.ToString(msg.Id.ToBytes()), _options.GetExpansion());
           }
           break;
       }

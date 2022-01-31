@@ -3,7 +3,8 @@
   public static class IntExtensions
   {
 
-    public static byte[] ToBytesShort(this int s) {
+    public static byte[] ToBytesShort(this int s)
+    {
       return new byte[]
       {
         (byte)(s >> 8),

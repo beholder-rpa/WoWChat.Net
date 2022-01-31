@@ -2,7 +2,7 @@
 
 using System;
 
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public class PacketHandlerAttribute : Attribute
 {
   public PacketHandlerAttribute(int id, WoWExpansion expansion = WoWExpansion.All)

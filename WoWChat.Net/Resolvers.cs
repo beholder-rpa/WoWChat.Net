@@ -2,7 +2,6 @@
 
 using Common;
 using Game;
-using Realm;
 
 public delegate GamePacketDecoder GamePacketDecoderResolver(WoWExpansion expansion);
 

@@ -3,14 +3,12 @@
 using Common;
 using DotNetty.Transport.Channels;
 using Game;
-using Game.PacketHandlers;
-using global::WoWChat.Net.Game.Events;
-using global::WoWChat.Net.Realm.Events;
-using global::WoWChat.Net.Realm.PacketHandlers;
+using Game.Events;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Options;
 using Realm;
+using Realm.Events;
 
 public static class ServiceCollectionExtensions
 {
@@ -25,47 +23,49 @@ public static class ServiceCollectionExtensions
     // Config
     services.Configure<WowChatOptions>(namedConfigurationSection);
 
+    // WoWChat
+    services.AddTransient<IWoWChat, WoWChat>();
+
     // Dotnetty
-    services.AddScoped<IEventLoopGroup, MultithreadEventLoopGroup>();
+    services.AddTransient<IEventLoopGroup, MultithreadEventLoopGroup>();
 
     // Common
-    services.AddScoped<IdleStateCallback>();
+    services.AddTransient<IdleStateCallback>();
 
     // Realm
-    services.AddScoped<RealmPacketHandler>();
+    services.AddTransient<RealmChannelInitializer>();
 
-    services.AddScoped<RealmPacketDecoder>();
-    services.AddScoped<RealmPacketEncoder>();
+    services.AddTransient<RealmPacketHandler>();
 
-    services.AddScoped<RealmChannelInitializer>();
-    services.AddScoped<RealmConnector>();
+    services.AddTransient<RealmPacketDecoder>();
+    services.AddTransient<RealmPacketEncoder>();
+
+    services.AddTransient<RealmConnector>();
 
     // Game
+    // Scoped GameHeaderCrypt instances ensure that decoders and encoders
+    // recieve the same crypt instance dependency per scope
     services.AddScoped<GameHeaderCrypt>();
     services.AddScoped<GameHeaderCryptTBC>();
     services.AddScoped<GameHeaderCryptWotLK>();
     services.AddScoped<GameHeaderCryptMoP>();
 
-    services.AddScoped<GamePacketDecoder>();
-    services.AddScoped<GamePacketDecoderWotLK>();
-    services.AddScoped<GamePacketDecoderCataclysm>();
-    services.AddScoped<GamePacketDecoderMoP>();
+    // Add a scoped name lookup to allow for shared name caching per scope.
+    services.AddScoped<GameNameLookup>();
 
-    services.AddScoped<GamePacketEncoder>();
-    services.AddScoped<GamePacketEncoderCataclysm>();
-    services.AddScoped<GamePacketEncoderMoP>();
+    services.AddTransient<GamePacketDecoder>();
+    services.AddTransient<GamePacketDecoderWotLK>();
+    services.AddTransient<GamePacketDecoderCataclysm>();
+    services.AddTransient<GamePacketDecoderMoP>();
 
-    services.AddScoped<GameHeaderCrypt>();
-    services.AddScoped<GameHeaderCryptTBC>();
-    services.AddScoped<GameHeaderCryptWotLK>();
+    services.AddTransient<GamePacketEncoder>();
+    services.AddTransient<GamePacketEncoderCataclysm>();
+    services.AddTransient<GamePacketEncoderMoP>();
 
-    services.AddScoped<GamePacketHandler>();
+    services.AddTransient<GamePacketHandler>();
 
-    services.AddScoped<GameChannelInitializer>();
-    services.AddScoped<GameConnector>();
-
-    // WoWChat
-    services.AddScoped<IWoWChat, WoWChat>();
+    services.AddTransient<GameChannelInitializer>();
+    services.AddTransient<GameConnector>();
 
     // Resolvers
     services.AddTransient<GamePacketDecoderResolver>(serviceProvider => expansion =>
@@ -111,10 +111,10 @@ public static class ServiceCollectionExtensions
       .SelectMany(s => s.GetTypes())
       .Where(p => realmPacketHandlerInterface.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetHandlerAttributeType));
 
-    foreach(var realmPacketHandlerType in realmPacketHandlerTypes)
+    foreach (var realmPacketHandlerType in realmPacketHandlerTypes)
     {
-      services.AddScoped(realmPacketHandlerInterface, realmPacketHandlerType);
-      services.AddScoped(realmPacketHandlerType);
+      services.AddTransient(realmPacketHandlerInterface, realmPacketHandlerType);
+      services.AddTransient(realmPacketHandlerType);
     }
 
     // Game
@@ -125,8 +125,35 @@ public static class ServiceCollectionExtensions
 
     foreach (var gamePacketHandlerType in gamePacketHandlerTypes)
     {
-      services.AddScoped(gamePacketHandlerInterface, gamePacketHandlerType);
-      services.AddScoped(gamePacketHandlerType);
+      services.AddTransient(gamePacketHandlerInterface, gamePacketHandlerType);
+      services.AddTransient(gamePacketHandlerType);
+    }
+
+    // Add Known Packet Commands
+    var packetCommandAttributeType = typeof(PacketCommandAttribute);
+
+    // Realm
+    var realmPacketCommandInterface = typeof(IPacketCommand<RealmEvent>);
+    var realmPacketCommandTypes = AppDomain.CurrentDomain.GetAssemblies()
+      .SelectMany(s => s.GetTypes())
+      .Where(p => realmPacketCommandInterface.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetCommandAttributeType));
+
+    foreach (var realmPacketCommandType in realmPacketCommandTypes)
+    {
+      services.AddTransient(realmPacketCommandInterface, realmPacketCommandType);
+      services.AddTransient(realmPacketCommandType);
+    }
+
+    // Game
+    var gamePacketCommandInterface = typeof(IPacketCommand<GameEvent>);
+    var gamePacketCommandTypes = AppDomain.CurrentDomain.GetAssemblies()
+      .SelectMany(s => s.GetTypes())
+      .Where(p => gamePacketCommandInterface.IsAssignableFrom(p) && p.CustomAttributes.Any(a => a.AttributeType == packetCommandAttributeType));
+
+    foreach (var gamePacketCommandType in gamePacketCommandTypes)
+    {
+      services.AddTransient(gamePacketCommandInterface, gamePacketCommandType);
+      services.AddTransient(gamePacketCommandType);
     }
   }
 }

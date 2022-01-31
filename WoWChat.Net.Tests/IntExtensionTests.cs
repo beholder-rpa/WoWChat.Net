@@ -1,8 +1,8 @@
 ﻿namespace WoWChat.Net.Tests
 {
+  using Extensions;
   using System;
   using System.Linq;
-  using Extensions;
   using Xunit;
 
   public class IntExtensionTests

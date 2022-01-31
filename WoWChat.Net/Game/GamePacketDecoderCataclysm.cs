@@ -2,9 +2,9 @@
 {
   using DotNetty.Buffers;
   using DotNetty.Transport.Channels;
-  using Options;
   using Microsoft.Extensions.Logging;
   using Microsoft.Extensions.Options;
+  using Options;
   using System.IO.Compression;
 
   public class GamePacketDecoderCataclysm : GamePacketDecoderWotLK
@@ -25,7 +25,7 @@
         var compressed = new byte[input.ReadableBytes];
         input.ReadBytes(compressed);
         input.Release();
-  
+
         using var decompressedStream = new MemoryStream(decompressedSize);
         using var compressedStream = new MemoryStream(compressed);
         using var decompressor = new DeflateStream(compressedStream, CompressionMode.Decompress);
@@ -42,15 +42,18 @@
       }
     }
 
-    protected virtual int GetDecompressedSize(IByteBuffer byteBuf) {
+    protected virtual int GetDecompressedSize(IByteBuffer byteBuf)
+    {
       return byteBuf.ReadIntLE();
     }
 
-    protected virtual int GetDecompressedId(int id, IByteBuffer byteBuf) {
+    protected virtual int GetDecompressedId(int id, IByteBuffer byteBuf)
+    {
       return id ^ COMPRESSED_DATA_MASK;
     }
 
-    protected virtual bool IsCompressed(int id) {
+    protected virtual bool IsCompressed(int id)
+    {
       return (id & COMPRESSED_DATA_MASK) == COMPRESSED_DATA_MASK;
     }
   }

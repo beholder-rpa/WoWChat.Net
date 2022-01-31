@@ -38,7 +38,7 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
-  public GameRealm? Realm { get; set; }
+  public GameServerInfo? Realm { get; set; }
 
   public byte[]? SessionKey { get; set; }
 

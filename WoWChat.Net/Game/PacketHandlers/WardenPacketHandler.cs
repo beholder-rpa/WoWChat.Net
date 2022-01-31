@@ -7,9 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Options;
 
-[PacketHandler(WorldCommand.SMSG_WARDEN_DATA, WoWExpansion.Vanilla)]
-[PacketHandler(WorldCommand.SMSG_WARDEN_DATA, WoWExpansion.TBC)]
-[PacketHandler(WorldCommand.SMSG_WARDEN_DATA, WoWExpansion.WotLK)]
+[PacketHandler(WorldCommand.SMSG_WARDEN_DATA, WoWExpansion.Vanilla | WoWExpansion.TBC | WoWExpansion.WotLK)]
 public class WardenPacketHandler : IPacketHandler<GameEvent>
 {
   protected readonly WowChatOptions _options;

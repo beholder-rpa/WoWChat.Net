@@ -4,7 +4,7 @@ using Common;
 
 public record GameConnectedEvent : GameEvent
 {
-  public GameRealm Realm { get; init; } = new GameRealm();
+  public GameServerInfo GameServerInfo { get; init; } = new GameServerInfo();
 
   public string SessionKey { get; init; } = string.Empty;
 }

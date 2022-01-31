@@ -1,9 +1,9 @@
 ﻿namespace WoWChat.Net.Game
 {
   using DotNetty.Buffers;
-  using Options;
   using Microsoft.Extensions.Logging;
   using Microsoft.Extensions.Options;
+  using Options;
 
   public class GamePacketDecoderMoP : GamePacketDecoderCataclysm
   {
@@ -14,13 +14,15 @@
     {
     }
 
-    protected override (int, int) ParseGameHeader(IByteBuffer input) {
+    protected override (int, int) ParseGameHeader(IByteBuffer input)
+    {
       var size = input.ReadShortLE() - 2;
       var id = input.ReadShortLE();
       return (id, size);
     }
 
-    protected override (int, int) ParseGameHeaderEncrypted(IByteBuffer input) {
+    protected override (int, int) ParseGameHeaderEncrypted(IByteBuffer input)
+    {
       var header = new byte[HEADER_LENGTH];
       input.ReadBytes(header);
       var decrypted = _crypt.Decrypt(header);
@@ -31,7 +33,8 @@
       return (id, size);
     }
 
-    protected override int GetDecompressedSize(IByteBuffer byteBuf) {
+    protected override int GetDecompressedSize(IByteBuffer byteBuf)
+    {
       var size = byteBuf.ReadIntLE();
       byteBuf.SkipBytes(8); // skip adler checksums
       return size;
