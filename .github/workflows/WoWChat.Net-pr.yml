@@ -21,7 +21,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ env.working-directory }}
 
     strategy:
       matrix:
