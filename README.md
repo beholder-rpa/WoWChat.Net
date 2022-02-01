@@ -26,7 +26,7 @@ The included CLI sample project contains a command line interface that can be us
 
 Add the NuGet package to your project:
 ```
-dotnet add PROJECT package WoWChat.Net --version 0.0.1
+dotnet add [PROJECT] package WoWChat.Net [--prerelease]
 ```
 
 Add WoWChat dependencies to DI
