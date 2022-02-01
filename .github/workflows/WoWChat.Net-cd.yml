@@ -42,6 +42,10 @@ jobs:
       - 
         name: Install dependencies
         run: dotnet restore
+      -
+        uses: dotnet/nbgv@master
+        with:
+          setAllVars: true
       - 
         name: Build
         run: dotnet publish --configuration Release --no-restore
