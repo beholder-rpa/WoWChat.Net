@@ -61,3 +61,7 @@ jobs:
       -
         name: gpr upload
         run: find -name "*.nupkg" -print -exec gpr push -k ${{secrets.GITHUB_TOKEN}} {} \;
+      -
+        name: Push generated package to NuGet
+        if: github.ref == 'refs/heads/master'
+        run: dotnet nuget push ${{env.working-directory}}/bin/Release/*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_AUTH_TOKEN }} --source https://api.nuget.org/v3/index.json
