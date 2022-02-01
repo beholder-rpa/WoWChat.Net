@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
   pull_request:
     branches: 
-      - master
+      - 'master/**'
     paths:
       - 'WoWChat.Net/**'
-      - 'WoWChat.Net.Tests/**'
       - '!WoWChat.Net/README.md'
       - '!WoWChat.Net/docs/**'
+      - 'WoWChat.Net.Tests/**'
+      - '!WoWChat.Net.Tests/README.md'
+      - '!WoWChat.Net.Tests/docs/**'
 
 jobs:
   validate:
