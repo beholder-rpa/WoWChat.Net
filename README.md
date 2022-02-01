@@ -18,9 +18,20 @@ Features:
 ## How it works
 At its core, WoWChat.Net interacts with WoW private servers utilizing its binary TCP Socket protocol. [Dotnetty](https://github.com/Azure/DotNetty) is utilized as a networking framework. It is designed to be a library that can be used in any .Net Core based application such as creating/publishing a bot for Discord, via Twilios API, an MQTT or AMPQ-based Message broker, or even a chat section on a website via Signalr/WebSockets.
 
-The main WoWChat class implements an IObservable<WoWChatEvent> interface, allowing chat messages, and other events, to be consumed via any IObserver<WoWChatEvent> implementation.
+The main WoWChat class implements an IObservable<IWoWChatEvent> interface, allowing chat messages, and other events, to be consumed via any IObserver<IWoWChatEvent> implementation.
 
 The included CLI sample project contains a command line interface that can be used to run the bot.
+
+## Usage
+
+Add the NuGet package to your project:
+```
+dotnet add PROJECT package WoWChat.Net --version 0.0.1
+```
+
+Implement an IObserver<IWoWChatEvent> and subscribe to the WoWChat.Net.Events.ChatEvents observable
+
+A sample CLI program is included in the project.
 
 ##### DO NOT, under any circumstances, use this bot on an account with existing characters!
 Even though this bot does not do anything malicious, some servers may not like a bot connecting, and GMs may ban the account!
