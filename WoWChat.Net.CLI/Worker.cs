@@ -1,28 +1,24 @@
-﻿namespace WoWChat.Net.CLI
+﻿using WoWChat.Net;
+
+public class Worker : BackgroundService
 {
-  public class Worker : BackgroundService
+  private readonly IServiceProvider _serviceProvider;
+  private readonly ILogger<Worker> _logger;
+
+  public Worker(IServiceProvider serviceProvider, ILogger<Worker> logger)
   {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<Worker> _logger;
+    _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+  }
 
-    public Worker(IServiceProvider serviceProvider, ILogger<Worker> logger)
-    {
-      _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-      _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+  {
+    using var scope = _serviceProvider.CreateScope();
+    var wowChat = scope.ServiceProvider.GetRequiredService<IWoWChat>();
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-      using (var scope = _serviceProvider.CreateScope())
-      {
-        var wowChat = scope.ServiceProvider.GetRequiredService<IWoWChat>();
+    _logger.LogInformation("WoWChat started at: {time}", DateTimeOffset.Now);
 
-        _logger.LogInformation("WoWChat started at: {time}", DateTimeOffset.Now);
-        await wowChat.Run(stoppingToken);
-      }
-
-      // Block this task until the program is closed.
-      await Task.Delay(-1, stoppingToken);
-    }
+    // Blocks until closed
+    await wowChat.Run(stoppingToken);
   }
 }

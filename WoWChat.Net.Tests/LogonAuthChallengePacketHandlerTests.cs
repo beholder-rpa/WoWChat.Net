@@ -24,10 +24,13 @@ public class LogonAuthChallengePacketHandlerTests
     var wowChatOptionsSnapshot = new Mock<IOptionsSnapshot<WowChatOptions>>();
     wowChatOptionsSnapshot.Setup(m => m.Value).Returns(new WowChatOptions()
     {
-      AccountName = "overhill",
-      AccountPassword = "SomePassword",
-      Version = "3.3.5",
-      Platform = Platform.Windows,
+      WoW = new WoWOptions()
+      {
+        AccountName = "overhill",
+        AccountPassword = "SomePassword",
+        Version = "3.3.5",
+        Platform = Platform.Windows,
+      }
     });
     var loggerMock = new Mock<ILogger<LogonAuthChallengePacketHandler>>();
 

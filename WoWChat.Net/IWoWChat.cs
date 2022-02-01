@@ -1,9 +1,9 @@
-﻿namespace WoWChat.Net
-{
-  using System.Threading;
+﻿namespace WoWChat.Net;
 
-  public interface IWoWChat
-  {
-    Task Run(CancellationToken cancellationToken);
-  }
+using Common;
+using System.Threading;
+
+public interface IWoWChat : IObservable<IWoWChatEvent>
+{
+  Task Run(CancellationToken cancellationToken);
 }

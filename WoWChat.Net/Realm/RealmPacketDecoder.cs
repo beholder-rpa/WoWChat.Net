@@ -71,7 +71,7 @@
             var result1 = input.ReadByte();
             if (RealmAuthResult.WOW_SUCCESS == result1)
             {
-              _size = (_options.GetExpansion() == WoWExpansion.Vanilla) ? 25 : 31;
+              _size = (_options.WoW.GetExpansion() == WoWExpansion.Vanilla) ? 25 : 31;
             }
             else
             {

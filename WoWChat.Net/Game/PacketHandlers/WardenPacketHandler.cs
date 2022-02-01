@@ -23,7 +23,7 @@ public class WardenPacketHandler : IPacketHandler<GameEvent>
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {
-    if (_options.Platform == Platform.Windows)
+    if (_options.WoW.Platform == Platform.Windows)
     {
       _logger.LogError("WARDEN ON WINDOWS IS NOT SUPPORTED! BOT MAY SOON DISCONNECT! TRY TO USE PLATFORM MAC!");
       return;

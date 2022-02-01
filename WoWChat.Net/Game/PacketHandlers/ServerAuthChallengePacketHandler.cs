@@ -34,7 +34,7 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
   public ServerAuthChallengePacketHandler(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver headerCryptResolver, ILogger<ServerAuthChallengePacketHandler> logger)
   {
     _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-    _headerCrypt = headerCryptResolver(_options.GetExpansion());
+    _headerCrypt = headerCryptResolver(_options.WoW.GetExpansion());
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 
@@ -69,7 +69,7 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
       throw new InvalidOperationException("SessionKey has not been set.");
     }
 
-    var account = _options.AccountName.ToUpperInvariant();
+    var account = _options.WoW.AccountName.ToUpperInvariant();
 
     ServerSeed = msg.ByteBuf.ReadInt();
 
@@ -83,7 +83,7 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
 
     var output = ctx.Allocator.Buffer(200, 400);
     output.WriteShortLE(0);
-    output.WriteIntLE(_options.GetBuild());
+    output.WriteIntLE(_options.WoW.GetBuild());
     output.WriteIntLE(0);
     output.WriteAscii(account);
     output.WriteByte(0);

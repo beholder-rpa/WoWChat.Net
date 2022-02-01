@@ -23,7 +23,10 @@ public class ServerAuthChallengePacketHandlerTests
     var wowChatOptionsSnapshot = new Mock<IOptionsSnapshot<WowChatOptions>>();
     wowChatOptionsSnapshot.Setup(m => m.Value).Returns(new WowChatOptions()
     {
-      AccountName = "overhill"
+      WoW = new WoWOptions()
+      {
+        AccountName = "overhill"
+      }
     });
     var loggerMock = new Mock<ILogger<ServerAuthChallengePacketHandlerWotLK>>();
 

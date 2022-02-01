@@ -29,7 +29,7 @@
       )
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-      var expansion = _options.GetExpansion();
+      var expansion = _options.WoW.GetExpansion();
 
       _gamePacketHandler = gamePacketHandler ?? throw new ArgumentNullException(nameof(gamePacketHandler));
       _gamePacketDecoder = gamePacketDecoderResolver(expansion) ?? throw new ArgumentNullException(nameof(gamePacketDecoderResolver));

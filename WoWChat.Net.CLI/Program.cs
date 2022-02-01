@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Configuration.Json;
 using WoWChat.Net;
-using WoWChat.Net.CLI;
 
 IHost host = Host.CreateDefaultBuilder(args)
   .ConfigureLogging(builder =>

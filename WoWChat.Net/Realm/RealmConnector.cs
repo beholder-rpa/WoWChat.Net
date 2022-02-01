@@ -39,7 +39,7 @@ public class RealmConnector : IObservable<RealmEvent>
     _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    InitPacketCommands(serviceProvider, _options.GetExpansion());
+    InitPacketCommands(serviceProvider, _options.WoW.GetExpansion());
   }
 
   public IEventLoopGroup Group { get { return _group; } }
@@ -99,8 +99,8 @@ public class RealmConnector : IObservable<RealmEvent>
 
     OnRealmEvent(new RealmConnectingEvent()
     {
-      Host = _options.RealmListHost,
-      Port = _options.RealmListPort,
+      Host = _options.WoW.RealmListHost,
+      Port = _options.WoW.RealmListPort,
     });
 
     var bootstrap = new Bootstrap();
@@ -109,7 +109,7 @@ public class RealmConnector : IObservable<RealmEvent>
       .Option(ChannelOption.ConnectTimeout, TimeSpan.FromMilliseconds(_options.ConnectTimeoutMs))
       .Option(ChannelOption.SoKeepalive, true)
       .Option(ChannelOption.Allocator, UnpooledByteBufferAllocator.Default)
-      .RemoteAddress(_options.RealmListHost, _options.RealmListPort)
+      .RemoteAddress(_options.WoW.RealmListHost, _options.WoW.RealmListPort)
       .Handler(_channelInitializer);
 
     try
@@ -130,9 +130,9 @@ public class RealmConnector : IObservable<RealmEvent>
       _realmChannel = connectTask.Result;
       OnRealmEvent(new RealmConnectedEvent()
       {
-        Name = _options.RealmName,
-        Host = _options.RealmListHost,
-        Port = _options.RealmListPort
+        Name = _options.WoW.RealmName,
+        Host = _options.WoW.RealmListHost,
+        Port = _options.WoW.RealmListPort
       });
     }
     catch (Exception ex)

@@ -1,0 +1,57 @@
+name: WoWChat.Net PR
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: 
+      - master
+    paths:
+      - 'WoWChat.Net/**'
+      - '!WoWChat.Net/README.md'
+      - '!WoWChat.Net/docs/**'
+
+jobs:
+  validate:
+
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./WoWChat.Net
+      cache-key: ./WoWChat.Net-pr
+    
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.working-directory }}
+
+    strategy:
+      matrix:
+        dotnet-version: ['6.x']
+
+    steps:
+      -
+        uses: actions/checkout@v2
+      - 
+        name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+      - 
+        name: Install dependencies
+        run: dotnet restore
+      -
+        name: Add dotnet-format problem matcher
+        uses: xt0rted/dotnet-format-problem-matcher@v1
+      -
+        name: Restore dotnet tools
+        uses: xt0rted/dotnet-tool-restore@v1
+      -
+        name: Run dotnet format
+        uses: xt0rted/dotnet-format@v1
+        with:
+          only-changed-files: "true"
+      - 
+        name: Build
+        run: dotnet build --configuration Release --no-restore -r linux-arm64
+      # -
+      #   name: Test
+      #   run: dotnet test --no-restore --verbosity normal

@@ -47,7 +47,7 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
       throw new InvalidOperationException("SessionKey has not been set.");
     }
 
-    var account = _options.AccountName.ToUpperInvariant();
+    var account = _options.WoW.AccountName.ToUpperInvariant();
 
     msg.ByteBuf.SkipBytes(4); // wotlk
     ServerSeed = msg.ByteBuf.ReadInt();
@@ -62,7 +62,7 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
 
     var output = ctx.Allocator.Buffer(200, 400);
     output.WriteShortLE(0);
-    output.WriteIntLE(_options.GetBuild());
+    output.WriteIntLE(_options.WoW.GetBuild());
     output.WriteIntLE(0);
     output.WriteAscii(account);
     output.WriteByte(0);

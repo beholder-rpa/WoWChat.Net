@@ -39,7 +39,7 @@ public partial class GameConnector : IObservable<GameEvent>
     _group = group ?? throw new ArgumentNullException(nameof(group));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    InitPacketCommands(serviceProvider, _options.GetExpansion());
+    InitPacketCommands(serviceProvider, _options.WoW.GetExpansion());
   }
 
   public IEventLoopGroup Group { get { return _group; } }

@@ -28,16 +28,16 @@
       ILogger<GamePacketHandler> logger)
     {
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-      _headerCrypt = headerCryptResolver(_options.GetExpansion());
+      _headerCrypt = headerCryptResolver(_options.WoW.GetExpansion());
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-      if (string.IsNullOrWhiteSpace(_options.AccountName))
+      if (string.IsNullOrWhiteSpace(_options.WoW.AccountName))
       {
         throw new InvalidOperationException("An account name must be specified in configuration");
       }
 
       //Initialize the packet handlers
-      InitPacketHandlers(serviceProvider, _options.GetExpansion());
+      InitPacketHandlers(serviceProvider, _options.WoW.GetExpansion());
     }
 
     public GameServerInfo? Realm { get; set; } = null;
@@ -141,7 +141,7 @@
           }
           else
           {
-            _logger.LogWarning("A packet handler for command {id} for expansion {expansion} could not be located.", BitConverter.ToString(msg.Id.ToBytes()), _options.GetExpansion());
+            _logger.LogWarning("A packet handler for command {id} for expansion {expansion} could not be located.", BitConverter.ToString(msg.Id.ToBytes()), _options.WoW.GetExpansion());
           }
           break;
       }

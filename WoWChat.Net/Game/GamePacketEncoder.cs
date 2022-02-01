@@ -17,7 +17,7 @@ public class GamePacketEncoder : MessageToByteEncoder<Packet>
   public GamePacketEncoder(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketEncoder> logger)
   {
     var localOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
-    _crypt = cryptResolver(localOptions.GetExpansion());
+    _crypt = cryptResolver(localOptions.WoW.GetExpansion());
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
   }
 

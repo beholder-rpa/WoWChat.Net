@@ -78,8 +78,8 @@ public class LogonAuthChallengePacketHandler : IPacketHandler<RealmEvent>
     }
 
     SRPClient = new SRPClient(
-    _options.AccountName,
-    _options.AccountPassword,
+    _options.WoW.AccountName,
+    _options.WoW.AccountPassword,
     B,
     g,
     n,
@@ -94,9 +94,9 @@ public class LogonAuthChallengePacketHandler : IPacketHandler<RealmEvent>
     byteBuf.WriteBytes(aArray);
     byteBuf.WriteBytes(SRPClient.Proof);
     var crc = new byte[20];
-    if (_buildCrcHashes.ContainsKey((_options.GetBuild(), _options.Platform)))
+    if (_buildCrcHashes.ContainsKey((_options.WoW.GetBuild(), _options.WoW.Platform)))
     {
-      crc = _buildCrcHashes[(_options.GetBuild(), _options.Platform)];
+      crc = _buildCrcHashes[(_options.WoW.GetBuild(), _options.WoW.Platform)];
     }
     using SHA1 alg = SHA1.Create();
     var crcsha = alg.ComputeHash(aArray.Combine(crc));

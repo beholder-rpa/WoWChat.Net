@@ -1,4 +1,4 @@
-﻿namespace WoWChat.Net.Options;
+﻿namespace WoWChat.Net.Common;
 
 public enum Platform
 {

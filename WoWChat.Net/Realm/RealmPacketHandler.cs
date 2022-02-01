@@ -28,18 +28,18 @@
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-      if (string.IsNullOrWhiteSpace(_options.AccountName))
+      if (string.IsNullOrWhiteSpace(_options.WoW.AccountName))
       {
         throw new InvalidOperationException("An account name must be specified in configuration");
       }
 
-      if (string.IsNullOrWhiteSpace(_options.AccountPassword))
+      if (string.IsNullOrWhiteSpace(_options.WoW.AccountPassword))
       {
         throw new InvalidOperationException("An account password must be specified in configuration");
       }
 
       //Initialize the packet handlers
-      InitPacketHandlers(serviceProvider, _options.GetExpansion());
+      InitPacketHandlers(serviceProvider, _options.WoW.GetExpansion());
     }
 
     /// <summary>
@@ -156,14 +156,14 @@
 
     protected virtual Packet CreateClientAuthChallenge(IChannelHandlerContext context)
     {
-      var username = _options.AccountName;
-      var version = _options.Version.Split(".").Select(v => byte.Parse(v)).ToArray();
-      var platform = _options.Platform == Platform.Windows ? "Win" : "Mac";
+      var username = _options.WoW.AccountName;
+      var version = _options.WoW.Version.Split(".").Select(v => byte.Parse(v)).ToArray();
+      var platform = _options.WoW.Platform == Platform.Windows ? "Win" : "Mac";
 
       var byteBuf = context.Allocator.Buffer(50, 100);
 
       // seems to be 3 for vanilla and 8 for bc/wotlk
-      if (_options.GetExpansion() == WoWExpansion.Vanilla)
+      if (_options.WoW.GetExpansion() == WoWExpansion.Vanilla)
       {
         byteBuf.WriteByte(3);
       }
@@ -176,7 +176,7 @@
       byteBuf.WriteUnsignedShortLE((ushort)(username.Length + 30));
       byteBuf.WriteStringLE("WoW");
       byteBuf.WriteBytes(version);
-      byteBuf.WriteUnsignedShortLE(_options.GetBuild());
+      byteBuf.WriteUnsignedShortLE(_options.WoW.GetBuild());
       byteBuf.WriteStringLE("x86");
       byteBuf.WriteStringLE(platform);
       byteBuf.WriteAsciiLE("enUS");

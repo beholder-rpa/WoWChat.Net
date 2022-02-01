@@ -24,7 +24,7 @@
     public GamePacketDecoder(IOptionsSnapshot<WowChatOptions> options, GameHeaderCryptResolver cryptResolver, ILogger<GamePacketDecoder> logger)
     {
       var localOptions = options?.Value ?? throw new ArgumentNullException(nameof(options));
-      _crypt = cryptResolver(localOptions.GetExpansion()) ?? throw new ArgumentNullException(nameof(cryptResolver));
+      _crypt = cryptResolver(localOptions.WoW.GetExpansion()) ?? throw new ArgumentNullException(nameof(cryptResolver));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 

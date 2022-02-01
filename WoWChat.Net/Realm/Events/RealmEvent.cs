@@ -1,6 +1,7 @@
-﻿namespace WoWChat.Net.Realm.Events
+﻿namespace WoWChat.Net.Realm.Events;
+
+using Common;
+
+public abstract record RealmEvent : IWoWChatEvent
 {
-  public abstract record RealmEvent
-  {
-  }
 }

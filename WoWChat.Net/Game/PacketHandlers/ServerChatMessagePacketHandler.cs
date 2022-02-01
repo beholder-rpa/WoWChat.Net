@@ -36,10 +36,10 @@ public class ServerChatMessagePacketHandler : IPacketHandler<GameEvent>
     var chatMessage = ParseChatMessage(msg);
 
     var shouldRaiseEvent = true;
-    if (_options.Filters.Enabled)
+    if (_options.WoW.Filters.Enabled)
     {
       var text = chatMessage.FormattedMessage;
-      foreach(var pattern in _options.Filters.Patterns)
+      foreach(var pattern in _options.WoW.Filters.Patterns)
       {
         if (Regex.IsMatch(text, pattern))
         {
@@ -134,11 +134,11 @@ public class ServerChatMessagePacketHandler : IPacketHandler<GameEvent>
     }
     else if (string.IsNullOrWhiteSpace(channelName))
     {
-      formattedMessage = $"{header} {language}: {message}";
+      formattedMessage = $"{header} ({language}) {message}";
     }
     else
     {
-      formattedMessage = $"{header} {channelName} {language}: {message}";
+      formattedMessage = $"{header} {channelName} ({language}) {message}";
     }
 
     return formattedMessage;

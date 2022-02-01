@@ -1,0 +1,54 @@
+name: WoWChat.Net CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: 
+      - master
+    paths:
+      - 'WoWChat.Net/**'
+      - '!WoWChat.Net/README.md'
+      - '!WoWChat.Net/docs/**'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      working-directory: ./WoWChat.Net
+      cache-key: WoWChat.Net-cd
+    
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.working-directory }}
+
+    strategy:
+      matrix:
+        dotnet-version: ['6.x']
+
+    steps:
+      -
+        uses: actions/checkout@v2
+      - 
+        name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+          source-url: https://nuget.pkg.github.com/beholder-rpa/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}} 
+      - 
+        name: Install dependencies
+        run: dotnet restore
+      - 
+        name: Build
+        run: dotnet publish --configuration Release --no-restore
+      -
+        name: Pack solution and generate NuGet package
+        run: dotnet pack --configuration Release --no-restore -o out  
+      -
+        name: Push generated package to GitHub registry
+        run: dotnet nuget push ./out/*.nupkg --skip-duplicate --no-symbols true

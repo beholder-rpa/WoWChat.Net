@@ -1,5 +1,7 @@
 ﻿namespace WoWChat.Net.Game.Events;
 
-public abstract record GameEvent
+using Common;
+
+public abstract record GameEvent : IWoWChatEvent
 {
 }
