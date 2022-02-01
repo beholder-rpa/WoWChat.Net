@@ -1,7 +1,7 @@
 WoWChat.Net -- README
 =====================
 
-WoWChat.Net is a library that facilitates creating chat bota for old versions of World of Warcraft.
+WoWChat.Net is a library that facilitates creating chat bots for old versions of World of Warcraft.
 
 WoWChat.Net is a clean rewrite to in dotNet Core 6.x of the excellent scala-based [WoWChat](https://github.com/fjaros/wowchat) project with the focus on making a reusable library suitable for creating chat bots that can utilize not only Discord, but other chat and messaging platforms.
 
