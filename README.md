@@ -29,7 +29,27 @@ Add the NuGet package to your project:
 dotnet add PROJECT package WoWChat.Net --version 0.0.1
 ```
 
-Implement an IObserver<IWoWChatEvent> and subscribe to the WoWChat.Net.Events.ChatEvents observable
+Add WoWChat dependencies to DI
+``` C#
+.ConfigureServices((context, Services) => {
+  var config = context.Configuration;
+
+  services.AddWoWChat(config.GetSection("WoWChat"));
+});
+```
+
+Implement an IObserver<IWoWChatEvent> and subscribe to the WoWChat.Net.WoWChat observable
+
+``` C#
+using WoWChat.Net;
+using WoWChat.Net.Common;
+
+var wowChat = scope.ServiceProvider.GetRequiredService<IWoWChat>();
+var myObserver = new MyWoWChatObserver();
+wowChat.Subscribe(WoWChat);
+await wowChat.Run(stoppingToken);
+
+```
 
 A sample CLI program is included in the project.
 
