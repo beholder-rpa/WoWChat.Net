@@ -48,7 +48,7 @@ jobs:
           setAllVars: true
       - 
         name: Build
-        run: dotnet publish --configuration Release --no-restore
+        run: dotnet publish --configuration Release --no-restore /p:PublicRelease=false
       -
         name: Upload artifacts
         uses: actions/upload-artifact@v2
