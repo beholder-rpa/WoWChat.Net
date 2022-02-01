@@ -49,9 +49,6 @@ jobs:
         uses: xt0rted/dotnet-format@v1
         with:
           only-changed-files: "true"
-      - 
-        name: Build
-        run: dotnet build --configuration Release --no-restore -r linux-arm64
-      # -
-      #   name: Test
-      #   run: dotnet test --no-restore --verbosity normal
+      -
+        name: Test
+        run: dotnet test --no-restore --verbosity normal
