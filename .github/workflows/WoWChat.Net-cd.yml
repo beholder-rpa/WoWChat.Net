@@ -52,12 +52,6 @@ jobs:
           name: WoWChat.Net Assembly
           path: ${{ github.workspace }}/WoWChat.Net/bin/Release/net6.0/publish/
       -
-        name: Pack solution and generate NuGet package
-        run: dotnet pack --configuration Release --no-restore -o out  
-      -
-        name: Authenticate to Github Packages
-        run: dotnet nuget add source --username ${{ secrets.NUGET_GITHUB_USERNAME }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/beholder-rpa/index.json"
-      -
         name: Install gpr
         run: dotnet tool install gpr --global
       -
