@@ -1,9 +1,9 @@
 WoWChat.Net -- README
 =====================
 
-WoWChat.Net is a library that facilitates creating a chat bot for old versions of World of Warcraft.
+WoWChat.Net is a library that facilitates creating chat bota for old versions of World of Warcraft.
 
-WoWChat.Net is a clean rewrite of the excellent scala-based [WoWChat](https://github.com/fjaros/wowchat) project in dotNet Core 6.x with the focus on making a library usable for creating chat bots that can utilize not only Discord, but other chat and messaging platforms.
+WoWChat.Net is a clean rewrite to in dotNet Core 6.x of the excellent scala-based [WoWChat](https://github.com/fjaros/wowchat) project with the focus on making a reusable library suitable for creating chat bots that can utilize not only Discord, but other chat and messaging platforms.
 
 **It does NOT support WoW Classic or Retail servers.**
 
@@ -11,7 +11,7 @@ Currently supported versions are:
   * Wrath of the Lich King (Tested with Ascension)
 
 Features:
-* Clientless (Does not need the WoW Client to be open or even installed to run - this means you can run a chatbot on something as small as a Raspberry PI or a $5/mo Digital Ocean droplet)
+* Clientless (Does not need the WoW Client to be open or even installed to run - this means you can run a chat bot on something as small as a Raspberry PI or a $5/mo Digital Ocean droplet)
 * Runs within a dotNet Core program, and therefore works on Windows, Mac, and Linux.
 
 ## How it works
