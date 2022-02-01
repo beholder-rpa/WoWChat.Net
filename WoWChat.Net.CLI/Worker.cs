@@ -18,7 +18,9 @@ public class Worker : BackgroundService
 
     _logger.LogInformation("WoWChat started at: {time}", DateTimeOffset.Now);
 
-    // Blocks until closed
     await wowChat.Run(stoppingToken);
+
+    // Block this task until the program is closed.
+    await Task.Delay(-1, stoppingToken);
   }
 }

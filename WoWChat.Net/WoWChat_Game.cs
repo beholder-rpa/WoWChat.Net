@@ -101,12 +101,12 @@ public partial class WoWChat : IObserver<GameEvent>
   #region IObserver<GameEvent>
   void IObserver<GameEvent>.OnCompleted()
   {
-    throw new NotImplementedException();
+    _logger.LogInformation("GameEvent Observable Completed.");
   }
 
   void IObserver<GameEvent>.OnError(Exception error)
   {
-    throw new NotImplementedException();
+    _logger.LogError("An unexpected error occurred: {message}", error.Message);
   }
 
   void IObserver<GameEvent>.OnNext(GameEvent value)

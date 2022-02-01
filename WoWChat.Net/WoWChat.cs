@@ -1,6 +1,7 @@
 ﻿namespace WoWChat.Net
 {
   using Common;
+  using Extensions;
   using Microsoft.Extensions.Logging;
   using Microsoft.Extensions.Options;
   using Options;
@@ -11,7 +12,7 @@
   /// <summary>
   /// WoWChat implementation
   /// </summary>
-  public partial class WoWChat : IWoWChat
+  public partial class WoWChat : IWoWChat, IDisposable
   {
     private readonly IServiceProvider _serviceProvider;
 
@@ -51,8 +52,6 @@
     {
       _cancellationToken = cancellationToken;
       await ConnectLogonServer();
-      await Task.Delay(-1, cancellationToken);
-      await DisconnectLogonServer();
     }
 
     #region IObservable<IWoWChatEvent>
@@ -100,6 +99,30 @@
           _parent._observers.TryRemove(_observer, out _);
         }
       }
+    }
+    #endregion
+
+    #region IDisposable
+    private bool _isDisposed;
+    protected virtual void Dispose(bool disposing)
+    {
+      if (!_isDisposed)
+      {
+        if (disposing)
+        {
+          DisconnectGameServer().Forget();
+          DisconnectLogonServer().Forget();
+        }
+
+        _isDisposed = true;
+      }
+    }
+
+    public void Dispose()
+    {
+      // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+      Dispose(disposing: true);
+      GC.SuppressFinalize(this);
     }
     #endregion
   }
