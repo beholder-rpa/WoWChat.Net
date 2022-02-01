@@ -1,9 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>WoWChat.Net</PackageId>
+    <Authors>beholder-rpa</Authors>
+    <Title>WoWChat.Net</Title>
+    <PackageTags>WoWChat</PackageTags>
+    <PackageDescription>
+      WoWChat.Net is a library that facilitates creating a chat bot for old versions of World of Warcraft.
+    </PackageDescription>
+    <RepositoryUrl>https://github.com/beholder-rpa/WoWChat.Net</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/beholder-rpa/WoWChat.Net</PackageProjectUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +28,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.255">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
