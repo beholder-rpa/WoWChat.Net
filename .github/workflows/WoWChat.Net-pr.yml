@@ -48,6 +48,13 @@ jobs:
         uses: xt0rted/dotnet-format@v1
         with:
           only-changed-files: "true"
+        if: github.event_name == 'pull_request'
+      -
+        name: Run dotnet format
+        uses: xt0rted/dotnet-format@v1
+        with:
+          only-changed-files: "false"
+        if: github.event_name != 'pull_request'
       -
         name: Test
         run: dotnet test --no-restore --verbosity normal
