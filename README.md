@@ -13,7 +13,7 @@ Currently supported versions are:
 
 Features:
 * Clientless (Does not need the WoW Client to be open or even installed to run - this means you can run a chat bot on something as small as a Raspberry PI or a $5/mo Digital Ocean droplet)
-* Runs within a dotNet Core program, and therefore works on Windows, Mac, and Linux.
+* Runs within a dotNet core program, without any dependencies, and therefore works on Windows, Mac, and Linux.
 
 ## How it works
 At its core, WoWChat.Net interacts with WoW private servers utilizing its binary TCP Socket protocol. [Dotnetty](https://github.com/Azure/DotNetty) is utilized as a networking framework. It is designed to be a library that can be used in any .Net Core based application such as creating/publishing a bot for Discord, via Twilios API, an MQTT or AMPQ-based Message broker, or even a chat section on a website via Signalr/WebSockets.
