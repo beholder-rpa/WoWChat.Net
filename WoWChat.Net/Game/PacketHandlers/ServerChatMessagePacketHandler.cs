@@ -39,7 +39,7 @@ public class ServerChatMessagePacketHandler : IPacketHandler<GameEvent>
     if (_options.WoW.Filters.Enabled)
     {
       var text = chatMessage.FormattedMessage;
-      foreach(var pattern in _options.WoW.Filters.Patterns)
+      foreach (var pattern in _options.WoW.Filters.Patterns)
       {
         if (Regex.IsMatch(text, pattern))
         {

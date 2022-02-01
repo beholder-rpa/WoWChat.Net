@@ -23,7 +23,7 @@
       {
         _logger.LogDebug("SEND REALM PACKET: {id} - {byteBuf}", BitConverter.ToString(message.Id.ToBytes()), BitConverter.ToString(message.ByteBuf.GetArrayCopy()));
       }
-      
+
 
       output.WriteByte(message.Id);
       output.WriteBytes(message.ByteBuf);

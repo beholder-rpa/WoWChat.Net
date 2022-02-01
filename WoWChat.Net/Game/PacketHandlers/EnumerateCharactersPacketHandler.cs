@@ -28,12 +28,13 @@ public class EnumerateCharactersPacketHandler : IPacketHandler<GameEvent>
     _logger.LogDebug("SMSG_CHAR_ENUM - {numCharacters} retrieved", characters.Count);
   }
 
-  protected virtual IList<GameCharacter> ParseCharEnum(Packet msg) {
+  protected virtual IList<GameCharacter> ParseCharEnum(Packet msg)
+  {
 
     var numberOfCharacters = msg.ByteBuf.ReadByte();
 
     var result = new List<GameCharacter>(numberOfCharacters);
-    for(int i = 0; i < numberOfCharacters; i++)
+    for (int i = 0; i < numberOfCharacters; i++)
     {
       var guid = msg.ByteBuf.ReadLongLE();
       var name = msg.ByteBuf.ReadString();

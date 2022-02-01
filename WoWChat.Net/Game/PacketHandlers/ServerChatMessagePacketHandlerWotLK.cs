@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using Options;
 using System.Text;
 
-[PacketHandler(WorldCommand.SMSG_MESSAGECHAT,  WoWExpansion.WotLK | WoWExpansion.Cataclysm | WoWExpansion.MoP)]
+[PacketHandler(WorldCommand.SMSG_MESSAGECHAT, WoWExpansion.WotLK | WoWExpansion.Cataclysm | WoWExpansion.MoP)]
 public class ServerChatMessagePacketHandlerWotLK : ServerChatMessagePacketHandler
 {
   public ServerChatMessagePacketHandlerWotLK(GameNameLookup gameNameLookup, IOptionsSnapshot<WowChatOptions> options, ILogger<ServerChatMessagePacketHandlerWotLK> logger)
