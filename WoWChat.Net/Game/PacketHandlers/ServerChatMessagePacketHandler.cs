@@ -58,7 +58,7 @@ public class ServerChatMessagePacketHandler : IPacketHandler<GameEvent>
     }
     else
     {
-      _logger.LogInformation("Message was filtered: {filteredMessage}", chatMessage.FormattedMessage);
+      _logger.LogDebug("Message was filtered: {filteredMessage}", chatMessage.FormattedMessage);
     }
   }
 
