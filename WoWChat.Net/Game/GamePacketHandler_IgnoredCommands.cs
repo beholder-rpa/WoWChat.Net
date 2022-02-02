@@ -14,9 +14,18 @@ public partial class GamePacketHandler
     WorldCommandWotLK.SMSG_CREATURE_QUERY_RESPONSE,
     WorldCommandWotLK.SMSG_ITEM_QUERY_SINGLE_RESPONSE,
     WorldCommandWotLK.SMSG_UPDATE_OBJECT,
-    WorldCommandWotLK.SMSG_AURA_UPDATE,
+
+
+    WorldCommandWotLK.SMSG_DESTROY_OBJECT,
+    WorldCommandWotLK.MSG_MOVE_STOP_STRAFE,
+    WorldCommandWotLK.MSG_MOVE_JUMP,
+    WorldCommandWotLK.MSG_MOVE_FALL_LAND,
+    WorldCommandWotLK.MSG_MOVE_SET_FACING,
     WorldCommandWotLK.SMSG_MONSTER_MOVE,
     WorldCommandWotLK.MSG_MOVE_HEARTBEAT,
-    WorldCommandWotLK.SMSG_DESTROY_OBJECT,
+    WorldCommandWotLK.SMSG_FORCE_MOVE_ROOT,
+
+    WorldCommandWotLK.SMSG_AURA_UPDATE_ALL,
+    WorldCommandWotLK.SMSG_AURA_UPDATE,
   };
 }

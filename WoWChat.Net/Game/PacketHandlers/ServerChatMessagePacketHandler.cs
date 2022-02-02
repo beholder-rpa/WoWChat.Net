@@ -44,6 +44,7 @@ public class ServerChatMessagePacketHandler : IPacketHandler<GameEvent>
         if (Regex.IsMatch(text, pattern))
         {
           shouldRaiseEvent = false;
+          continue;
         }
       }
     }
@@ -116,6 +117,9 @@ public class ServerChatMessagePacketHandler : IPacketHandler<GameEvent>
         Guid = senderId,
       });
     }
+
+    //TODO: use user-provided formatting supplied in options.
+    //supported tokens: %time, %type, %language, %user, %message, and %channel
     string? formattedMessage;
 
     string? header;

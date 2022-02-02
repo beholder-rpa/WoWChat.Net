@@ -3,8 +3,8 @@
 using Common;
 using DotNetty.Buffers;
 using Events;
-using Extensions;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 [PacketCommand(WorldCommand.CMSG_JOIN_CHANNEL, WoWExpansion.Vanilla)]
 public class JoinChannelCommand : IPacketCommand<GameEvent>
@@ -50,13 +50,13 @@ public class JoinChannelCommand : IPacketCommand<GameEvent>
       WriteJoinChannel(byteBuf, ChannelId, ChannelName);
 
       _channels.AddOrUpdate(ChannelId, ChannelName);
-      return Task.FromResult(new Packet(CommandId));
+      return Task.FromResult(new Packet(CommandId, byteBuf));
     }
   }
 
   protected virtual void WriteJoinChannel(IByteBuffer byteBuf, int id, string channelName)
   {
-    byteBuf.WriteStringLE(channelName);
+    byteBuf.WriteBytes(Encoding.UTF8.GetBytes(channelName));
     byteBuf.WriteByte(0);
     byteBuf.WriteByte(0);
   }
