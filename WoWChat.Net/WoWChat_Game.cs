@@ -28,7 +28,7 @@ public partial class WoWChat : IObserver<GameEvent>
   protected readonly Timer _pingTimer;
   protected readonly Timer _keepAliveTimer;
 
-  public async Task ConnectGameServer(GameServerInfo gameServer, byte[] sessionKey)
+  public Task ConnectGameServer(GameServerInfo gameServer, byte[] sessionKey)
   {
     if (gameServer == null)
     {
@@ -45,10 +45,11 @@ public partial class WoWChat : IObserver<GameEvent>
     _gameConnectorObserver = ((IObservable<GameEvent>)_gameConnector).Subscribe(this);
     _gamePacketHandlerObserver = ((IObservable<GameEvent>)_gameConnector.GamePacketHandler).Subscribe(this);
 
-    await _gameConnector.Connect(gameServer, sessionKey);
+    _gameConnector.Connect(gameServer, sessionKey).Wait(5000);
+    return Task.CompletedTask;
   }
 
-  public async Task DisconnectGameServer()
+  public Task DisconnectGameServer()
   {
     _logger.LogDebug("Disconnecting from game server...");
 
@@ -70,14 +71,15 @@ public partial class WoWChat : IObserver<GameEvent>
       _gameConnectorObserver = null;
     }
 
-    if (_gameConnector != null && _gameConnector.IsConnected == true)
+    if (_gameConnector != null && _gameConnector.IsConnected)
     {
       _gameConnector.RunCommand<LogoutRequestCommand>().Forget();
-      await _gameConnector.Disconnect();
+      _gameConnector.Disconnect().Wait(2000);
       _gameConnector = null;
     }
 
     _logger.LogDebug("Disconnected from game server.");
+    return Task.CompletedTask;
   }
 
   protected virtual void RunPingExecutor(object? sender, ElapsedEventArgs e)
@@ -102,18 +104,6 @@ public partial class WoWChat : IObserver<GameEvent>
     }
 
     _gameConnector.RunCommand<KeepAliveCommand>().Forget();
-  }
-
-  protected virtual async Task Reconnect()
-  {
-    await DisconnectGameServer();
-    await DisconnectLogonServer();
-    if (!_cancellationToken.IsCancellationRequested)
-    {
-      _logger.LogInformation("Disconnected from game server! Reconnecting in {reconnectDelay} seconds...", TimeSpan.FromMilliseconds(_options.ReconnectDelayMs));
-      Task.Delay(_options.ReconnectDelayMs).Wait();
-      ConnectLogonServer().Wait();
-    }
   }
 
   /// <summary>

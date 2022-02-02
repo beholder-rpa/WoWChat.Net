@@ -190,7 +190,6 @@ public class RealmConnector : IObservable<RealmEvent>
     }
 
     await _realmChannel.DisconnectAsync();
-    await _realmChannel.CloseAsync();
     _realmChannel = null;
   }
 

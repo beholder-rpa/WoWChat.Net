@@ -201,7 +201,6 @@ public partial class GameConnector : IObservable<GameEvent>
     }
 
     await _gameChannel.DisconnectAsync();
-    await _gameChannel.CloseAsync();
     _gameChannel = null;
   }
 

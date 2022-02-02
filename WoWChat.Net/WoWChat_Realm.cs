@@ -12,17 +12,18 @@ public partial class WoWChat : IObserver<RealmEvent>
   private IDisposable? _realmConnectorObserver;
   private IDisposable? _realmPacketHandlerObserver;
 
-  public async Task ConnectLogonServer()
+  public Task ConnectLogonServer()
   {
     _realmConnector = _serviceProvider.GetRequiredService<RealmConnector>();
 
     _realmConnectorObserver = ((IObservable<RealmEvent>)_realmConnector).Subscribe(this);
     _realmPacketHandlerObserver = ((IObservable<RealmEvent>)_realmConnector.RealmPacketHandler).Subscribe(this);
 
-    await _realmConnector.Connect();
+    _realmConnector.Connect().Wait(5000);
+    return Task.CompletedTask;
   }
 
-  public async Task DisconnectLogonServer()
+  public Task DisconnectLogonServer()
   {
     _logger.LogDebug("Disconnecting from logon server...");
     if (_realmPacketHandlerObserver != null)
@@ -37,13 +38,14 @@ public partial class WoWChat : IObserver<RealmEvent>
       _realmConnectorObserver = null;
     }
 
-    if (_realmConnector != null)
+    if (_realmConnector != null && _realmConnector.IsConnected)
     {
-      await _realmConnector.Disconnect();
+      _realmConnector.Disconnect().Wait(2000);
       _realmConnector = null;
     }
 
     _logger.LogDebug("Disconnected from logon server.");
+    return Task.CompletedTask;
   }
 
 

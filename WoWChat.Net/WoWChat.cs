@@ -56,6 +56,18 @@
       await ConnectLogonServer();
     }
 
+    protected virtual async Task Reconnect()
+    {
+      DisconnectGameServer().Forget();
+      DisconnectLogonServer().Forget();
+      if (!_cancellationToken.IsCancellationRequested)
+      {
+        _logger.LogInformation("Disconnected from game server! Reconnecting in {reconnectDelay} seconds...", TimeSpan.FromMilliseconds(_options.ReconnectDelayMs));
+        await Task.Delay(_options.ReconnectDelayMs);
+        ConnectLogonServer().Wait();
+      }
+    }
+
     #region IObservable<IWoWChatEvent>
     private readonly ConcurrentDictionary<IObserver<IWoWChatEvent>, WoWChatEventUnsubscriber> _observers = new ConcurrentDictionary<IObserver<IWoWChatEvent>, WoWChatEventUnsubscriber>();
 
