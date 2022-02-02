@@ -28,7 +28,10 @@ public class ServerMessageOfTheDayHandler : IPacketHandler<GameEvent>
       var message = msg.ByteBuf.ReadString();
       lines.AppendLine(message);
     }
-    EventCallback?.Invoke(new GameJoinedWorldEvent());
+    EventCallback?.Invoke(new GameMessageOfTheDayEvent()
+    {
+      Message = lines.ToString(),
+    });
     _logger.LogDebug("SMSG_MOTD: {lineCount}", lineCount);
   }
 }

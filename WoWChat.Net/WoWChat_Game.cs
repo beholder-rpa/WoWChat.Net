@@ -197,7 +197,7 @@ public partial class WoWChat : IObserver<GameEvent>
         }
         JoinChatChannels(_options.WoW.Chat).Wait();
         break;
-      case GameMessageOfTheDay messageOfTheDay:
+      case GameMessageOfTheDayEvent messageOfTheDay:
         _logger.LogInformation("*** Message of the Day***\n{message}", messageOfTheDay.Message);
         break;
       case GameChatMessageEvent chatMessageEvent:
