@@ -1,5 +1,10 @@
 version: 2
 updates:
+  # Maintain dependencies for NuGet packages
+  - package-ecosystem: "nuget"
+    directory: "WoWChat.Net/"
+    schedule:
+      interval: "daily"
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
