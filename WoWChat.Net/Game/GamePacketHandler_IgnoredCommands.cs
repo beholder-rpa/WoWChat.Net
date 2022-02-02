@@ -14,5 +14,9 @@ public partial class GamePacketHandler
     WorldCommandWotLK.SMSG_CREATURE_QUERY_RESPONSE,
     WorldCommandWotLK.SMSG_ITEM_QUERY_SINGLE_RESPONSE,
     WorldCommandWotLK.SMSG_UPDATE_OBJECT,
+    WorldCommandWotLK.SMSG_AURA_UPDATE,
+    WorldCommandWotLK.SMSG_MONSTER_MOVE,
+    WorldCommandWotLK.MSG_MOVE_HEARTBEAT,
+    WorldCommandWotLK.SMSG_DESTROY_OBJECT,
   };
 }

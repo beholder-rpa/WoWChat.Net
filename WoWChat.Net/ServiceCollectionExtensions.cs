@@ -50,7 +50,8 @@ public static class ServiceCollectionExtensions
     services.AddScoped<GameHeaderCryptWotLK>();
     services.AddScoped<GameHeaderCryptMoP>();
 
-    // Add a scoped name lookup to allow for shared name caching per scope.
+    // Add a scoped name lookups to allow for shared data caching per scope.
+    services.AddScoped<GameChannelLookup>();
     services.AddScoped<GameNameLookup>();
 
     services.AddTransient<GamePacketDecoder>();

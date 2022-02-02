@@ -3,6 +3,7 @@
 using Common;
 using DotNetty.Transport.Channels;
 using Events;
+using Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Options;
@@ -25,7 +26,14 @@ public class ServerMessagePacketHandler : IPacketHandler<GameEvent>
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {
-    //TODO...
+    var tp = msg.ByteBuf.ReadIntLE();
+    var txt = msg.ByteBuf.ReadString();
+
+    EventCallback?.Invoke(new GameServerMessageEvent()
+    {
+      Kind = (ServerMessageKind)tp,
+      Message = txt
+    });
   }
 
   protected enum ServerMessageType : byte

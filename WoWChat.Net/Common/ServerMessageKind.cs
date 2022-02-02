@@ -1,0 +1,10 @@
+﻿namespace WoWChat.Net.Common;
+
+public enum ServerMessageKind : byte
+{
+  SERVER_MSG_SHUTDOWN_TIME = 0x01,
+  SERVER_MSG_RESTART_TIME = 0x02,
+  SERVER_MSG_CUSTOM = 0x03,
+  SERVER_MSG_SHUTDOWN_CANCELLED = 0x04,
+  SERVER_MSG_RESTART_CANCELLED = 0x05,
+}

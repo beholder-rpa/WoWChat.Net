@@ -7,10 +7,13 @@ using Game.Events;
 using Game.PacketCommands;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Options;
+
 using System.Timers;
 
 public partial class WoWChat : IObserver<GameEvent>
 {
+  private readonly GameChannelLookup _channelLookup;
   private readonly GameNameLookup _nameLookup;
   private byte[] _sessionKey = Array.Empty<byte>();
   private GameServerInfo? _selectedGameServer;
@@ -52,6 +55,8 @@ public partial class WoWChat : IObserver<GameEvent>
     _inWorld = false;
     _pingTimer.Stop();
     _keepAliveTimer.Stop();
+    _channelLookup.Clear();
+    _nameLookup.Clear();
 
     if (_gamePacketHandlerObserver != null)
     {
@@ -96,6 +101,50 @@ public partial class WoWChat : IObserver<GameEvent>
     }
 
     _gameConnector.RunCommand<KeepAliveCommand>().Forget();
+  }
+
+  protected virtual async Task Reconnect()
+  {
+    await DisconnectGameServer();
+    await DisconnectLogonServer();
+    if (!_cancellationToken.IsCancellationRequested)
+    {
+      _logger.LogInformation("Disconnected from game server! Reconnecting in {reconnectDelay} seconds...", TimeSpan.FromMilliseconds(_options.ReconnectDelayMs));
+      Task.Delay(_options.ReconnectDelayMs).Wait();
+      ConnectLogonServer().Wait();
+    }
+  }
+
+  /// <summary>
+  /// Joins the channels contained in the specified ChatOptions object
+  /// </summary>
+  /// <param name="options"></param>
+  /// <returns></returns>
+  protected virtual Task JoinChatChannels(ChatOptions options)
+  {
+    if (options.Enabled == false)
+    {
+      _logger.LogInformation("Chat is not enabled.");
+      return Task.CompletedTask;
+    }
+
+    for (int i = 0; i < options.Channels.Length; i++)
+    {
+      var channel = options.Channels[i];
+
+      if (channel.Enabled == false)
+        continue;
+
+      var joinChannelCommand = _gameConnector?.GetCommand<JoinChannelCommand>();
+      if (joinChannelCommand != null)
+      {
+        joinChannelCommand.ChannelId = i;
+        joinChannelCommand.ChannelName = channel.Name;
+        _gameConnector?.SendCommand(joinChannelCommand);
+      }
+    }
+
+    return Task.CompletedTask;
   }
 
   #region IObserver<GameEvent>
@@ -155,11 +204,14 @@ public partial class WoWChat : IObserver<GameEvent>
         {
           _keepAliveTimer.Start();
         }
-        // TODO: Join Channels
+        JoinChatChannels(_options.WoW.Chat).Wait();
         break;
       case GameChatMessageEvent chatMessageEvent:
         var msg = chatMessageEvent.ChatMessage;
-        _logger.LogInformation(msg.FormattedMessage);
+        _logger.LogInformation("Chat Message: {formattedMessage}", msg.FormattedMessage);
+        break;
+      case GameChannelNotificationEvent channelNotification:
+        _logger.LogInformation("Channel Notification: {channelName} - {kind}", channelNotification.ChannelName, channelNotification.Kind);
         break;
       case GameNameQueryEvent nameQueryEvent:
         _nameLookup.AddOrUpdate(nameQueryEvent.NameQuery);
@@ -172,22 +224,41 @@ public partial class WoWChat : IObserver<GameEvent>
           _gameConnector?.SendCommand(command).Forget();
         }
         break;
+      case GameServerMessageEvent serverMessageEvent:
+        switch (serverMessageEvent.Kind)
+        {
+          case ServerMessageKind.SERVER_MSG_SHUTDOWN_TIME:
+            _logger.LogInformation("Server Message: Shutdown in {shutdownTime}", serverMessageEvent.Message);
+            break;
+          case ServerMessageKind.SERVER_MSG_RESTART_TIME:
+            _logger.LogInformation("Server Message: Restart in {shutdownTime}", serverMessageEvent.Message);
+            break;
+          case ServerMessageKind.SERVER_MSG_SHUTDOWN_CANCELLED:
+            _logger.LogInformation("Server Message: Shutdown Cancelled. {reason}", serverMessageEvent.Message);
+            break;
+          case ServerMessageKind.SERVER_MSG_RESTART_CANCELLED:
+            _logger.LogInformation("Server Message: Restart Cancelled. {reason}", serverMessageEvent.Message);
+            break;
+          case ServerMessageKind.SERVER_MSG_CUSTOM:
+          default:
+            _logger.LogInformation("Server Message: {message} {kind} ", serverMessageEvent.Message, serverMessageEvent.Kind);
+            break;
+        }
+        break;
       case GameInvalidatePlayerEvent invalidatePlayerEvent:
         _nameLookup.Remove(invalidatePlayerEvent.PlayerId, out _);
         break;
+      case GameDisconnectedEvent disconnectEvent:
+        _logger.LogInformation("Game Server Disconnected.");
+        Reconnect().Wait();
+        break;
       case GameErrorEvent errorEvent:
         _logger.LogInformation("Game Server Error: {message}", errorEvent.Message);
-        DisconnectGameServer().Wait();
-        DisconnectLogonServer().Wait();
-        if (!_cancellationToken.IsCancellationRequested)
-        {
-          _logger.LogInformation("Disconnected from game server! Reconnecting in {reconnectDelay} seconds...", TimeSpan.FromMilliseconds(_options.ReconnectDelayMs));
-          Task.Delay(_options.ReconnectDelayMs).Wait();
-          ConnectLogonServer().Wait();
-        }
+        Reconnect().Wait();
         break;
       default:
         _logger.LogWarning("Warning: Unhandled Game Event: {eventType}", value.GetType());
+        // TODO: Some sort of tracking of unhandled game events
         break;
     }
 

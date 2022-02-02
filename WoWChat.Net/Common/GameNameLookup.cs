@@ -4,21 +4,26 @@
 
   public class GameNameLookup
   {
-    private ConcurrentDictionary<long, GameNameQuery> _nameDictionary = new ConcurrentDictionary<long, GameNameQuery>();
+    private readonly ConcurrentDictionary<long, GameNameQuery> _nameTable = new();
 
     public bool TryGetName(long guid, out GameNameQuery? gameNameQuery)
     {
-      return _nameDictionary.TryGetValue(guid, out gameNameQuery);
+      return _nameTable.TryGetValue(guid, out gameNameQuery);
     }
 
     public void AddOrUpdate(GameNameQuery gameName)
     {
-      _nameDictionary.AddOrUpdate(gameName.Id, gameName, (id, existing) => gameName);
+      _nameTable.AddOrUpdate(gameName.Id, gameName, (id, existing) => gameName);
     }
 
     public void Remove(long guid, out GameNameQuery? gameName)
     {
-      _nameDictionary.Remove(guid, out gameName);
+      _nameTable.Remove(guid, out gameName);
+    }
+
+    public void Clear()
+    {
+      _nameTable.Clear();
     }
   }
 }

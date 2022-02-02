@@ -60,6 +60,11 @@ public class WoWOptions
   public string CharacterName { get; set; } = string.Empty;
 
   /// <summary>
+  /// Specifies the chat options
+  /// </summary>
+  public ChatOptions Chat { get; set; } = new ChatOptions();
+
+  /// <summary>
   /// Specifies filters for chat messages to be ignored by the bot.
   /// </summary>
   public FilterOptions Filters { get; set; } = new FilterOptions();

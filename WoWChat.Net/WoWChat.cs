@@ -24,11 +24,13 @@
 
     public WoWChat(
       IServiceProvider serviceProvider,
+      GameChannelLookup channelLookup,
       GameNameLookup nameLookup,
       IOptionsSnapshot<WowChatOptions> options,
       ILogger<WoWChat> logger)
     {
       _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+      _channelLookup = channelLookup ?? throw new ArgumentNullException(nameof(channelLookup));
       _nameLookup = nameLookup ?? throw new ArgumentNullException(nameof(nameLookup));
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
