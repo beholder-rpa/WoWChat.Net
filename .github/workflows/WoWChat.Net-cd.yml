@@ -5,6 +5,7 @@ on:
   push:
     branches: 
       - master
+      - release/**
     paths:
       - 'WoWChat.Net/**'
       - '!WoWChat.Net/README.md'
