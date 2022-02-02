@@ -11,6 +11,7 @@
     <PackageDescription>
       WoWChat.Net is a library that facilitates creating a chat bot for old versions of World of Warcraft.
     </PackageDescription>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/beholder-rpa/WoWChat.Net</RepositoryUrl>
     <PackageProjectUrl>https://github.com/beholder-rpa/WoWChat.Net</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -32,6 +33,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../README.md">
+      <Pack>true</Pack>
+      <PackagePath>README.md</PackagePath>
+    </Content>
   </ItemGroup>
 
 </Project>
