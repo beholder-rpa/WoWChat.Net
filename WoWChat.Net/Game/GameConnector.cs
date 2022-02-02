@@ -42,6 +42,8 @@ public partial class GameConnector : IObservable<GameEvent>
     InitPacketCommands(serviceProvider, _options.WoW.GetExpansion());
   }
 
+  public bool IsConnected { get {  return _gameChannel != null && _gameChannel.Active; } }
+
   public IEventLoopGroup Group { get { return _group; } }
 
   public GamePacketHandler GamePacketHandler { get { return _channelInitializer.GamePacketHandler; } }

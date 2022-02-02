@@ -70,8 +70,9 @@ public partial class WoWChat : IObserver<GameEvent>
       _gameConnectorObserver = null;
     }
 
-    if (_gameConnector != null)
+    if (_gameConnector != null && _gameConnector.IsConnected == true)
     {
+      _gameConnector.RunCommand<LogoutRequestCommand>().Forget();
       await _gameConnector.Disconnect();
       _gameConnector = null;
     }

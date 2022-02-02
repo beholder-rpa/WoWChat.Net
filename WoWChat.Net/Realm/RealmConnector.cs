@@ -42,6 +42,8 @@ public class RealmConnector : IObservable<RealmEvent>
     InitPacketCommands(serviceProvider, _options.WoW.GetExpansion());
   }
 
+  public bool IsConnected { get { return _realmChannel != null && _realmChannel.Active; } }
+
   public IEventLoopGroup Group { get { return _group; } }
 
   public RealmPacketHandler RealmPacketHandler { get { return _channelInitializer.RealmPacketHandler; } }
