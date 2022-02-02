@@ -242,6 +242,9 @@ public partial class WoWChat : IObserver<GameEvent>
             break;
         }
         break;
+      case GameZoneUnderAttackEvent zoneUnderAttackEvent:
+        _logger.LogInformation("Zone Under Attack: {zoneId} {kind} ", zoneUnderAttackEvent.ZoneId);
+        break;
       case GameInvalidatePlayerEvent invalidatePlayerEvent:
         _nameLookup.Remove(invalidatePlayerEvent.PlayerId, out _);
         break;

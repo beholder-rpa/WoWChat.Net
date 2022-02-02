@@ -55,6 +55,7 @@ public class WorldCommandWotLK : WorldCommandTBC
   public const int CMSG_GM_NUKE = 0x1FA;
 
   public const int SMSG_ACCOUNT_DATA_TIMES = 0x209;
+  public const int SMSG_ZONE_UNDER_ATTACK = 0x254;
   public const int SMSG_SET_FORCED_REACTIONS = 0x2A5;
   public const int SMSG_INIT_WORLD_STATES = 0x2C2;
   public const int SMSG_UPDATE_WORLD_STATE = 0x2C3;
