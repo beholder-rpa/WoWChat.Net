@@ -12,6 +12,7 @@
       WoWChat.Net is a library that facilitates creating a chat bot for old versions of World of Warcraft.
     </PackageDescription>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/beholder-rpa/WoWChat.Net</RepositoryUrl>
     <PackageProjectUrl>https://github.com/beholder-rpa/WoWChat.Net</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
