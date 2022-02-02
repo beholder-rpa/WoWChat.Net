@@ -115,7 +115,7 @@ public partial class WoWChat : IObserver<GameEvent>
   {
     if (options.Enabled == false)
     {
-      _logger.LogInformation("Chat is not enabled.");
+      _logger.LogInformation("Chat message processing is not enabled.");
       return Task.CompletedTask;
     }
 
@@ -196,6 +196,9 @@ public partial class WoWChat : IObserver<GameEvent>
           _keepAliveTimer.Start();
         }
         JoinChatChannels(_options.WoW.Chat).Wait();
+        break;
+      case GameMessageOfTheDay messageOfTheDay:
+        _logger.LogInformation("*** Message of the Day***\n{message}", messageOfTheDay.Message);
         break;
       case GameChatMessageEvent chatMessageEvent:
         var msg = chatMessageEvent.ChatMessage;

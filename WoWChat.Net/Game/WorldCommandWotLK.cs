@@ -40,7 +40,19 @@ public class WorldCommandWotLK : WorldCommandTBC
   public const int MSG_MOVE_HEARTBEAT = 0x0EE;
   public const int SMSG_FORCE_MOVE_ROOT = 0x0E8;
 
+  public const int SMSG_SPELL_COOLDOWN = 0x134;
+  public const int SMSG_SPELLHEALLOG = 0x150;
+  public const int SMSG_CLEAR_COOLDOWN = 0x1DE;
+  public const int CMSG_GM_NUKE = 0x1FA;
+
+  public const int SMSG_ACCOUNT_DATA_TIMES = 0x209;
+
+  public const int MSG_SET_DUNGEON_DIFFICULTY = 0x329;
+  public const int SMSG_FEATURE_SYSTEM_STATUS = 0x3C9;
+
   public new const int CMSG_KEEP_ALIVE = 0x0407;
+
+  public const int SMSG_QUESTGIVER_STATUS_MULTIPLE = 0x0418;
 
   // Spells
   public const int SMSG_POWER_UPDATE = 0x480;

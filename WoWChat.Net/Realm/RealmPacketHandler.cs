@@ -68,7 +68,7 @@
         {
           if ((packetHandlerAttribute.Expansion & expansion) != expansion)
           {
-            _logger.LogInformation($"Skipping {handlerType} for {expansion} (indicates {packetHandlerAttribute.Expansion})");
+            _logger.LogDebug($"Skipping {handlerType} for {expansion} (indicates {packetHandlerAttribute.Expansion})");
             continue;
           }
 

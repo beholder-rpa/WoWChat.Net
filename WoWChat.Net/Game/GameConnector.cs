@@ -74,7 +74,7 @@ public partial class GameConnector : IObservable<GameEvent>
       {
         if ((packetCommandAttribute.Expansion & expansion) != expansion)
         {
-          _logger.LogInformation($"Skipping {handlerType} for {expansion} (indicates {packetCommandAttribute.Expansion})");
+          _logger.LogDebug($"Skipping {handlerType} for {expansion} (indicates {packetCommandAttribute.Expansion})");
           continue;
         }
 

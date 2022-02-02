@@ -74,7 +74,7 @@ public class RealmConnector : IObservable<RealmEvent>
       {
         if ((packetCommandAttribute.Expansion & expansion) != expansion)
         {
-          _logger.LogInformation($"Skipping {handlerType} for {expansion} (indicates {packetCommandAttribute.Expansion})");
+          _logger.LogDebug($"Skipping {handlerType} for {expansion} (indicates {packetCommandAttribute.Expansion})");
           continue;
         }
 

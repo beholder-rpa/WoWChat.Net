@@ -41,6 +41,16 @@ public partial class GamePacketHandler
     WorldCommandWotLK.MSG_MOVE_HEARTBEAT,
     WorldCommandWotLK.SMSG_FORCE_MOVE_ROOT,
 
+    WorldCommandWotLK.SMSG_SPELL_COOLDOWN,
+    WorldCommandWotLK.SMSG_SPELLHEALLOG,
+    WorldCommandWotLK.SMSG_CLEAR_COOLDOWN,
+    WorldCommandWotLK.CMSG_GM_NUKE,
+
+    WorldCommandWotLK.SMSG_ACCOUNT_DATA_TIMES,
+
+    WorldCommandWotLK.MSG_SET_DUNGEON_DIFFICULTY,
+    WorldCommandWotLK.SMSG_FEATURE_SYSTEM_STATUS,
+
     WorldCommandWotLK.SMSG_AURA_UPDATE_ALL,
     WorldCommandWotLK.SMSG_AURA_UPDATE,
   };
