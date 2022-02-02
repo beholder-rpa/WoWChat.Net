@@ -17,8 +17,24 @@ public partial class GamePacketHandler
 
 
     WorldCommandWotLK.SMSG_DESTROY_OBJECT,
+
+    WorldCommandWotLK.MSG_MOVE_START_FORWARD,
+    WorldCommandWotLK.MSG_MOVE_START_BACKWARD,
+    WorldCommandWotLK.MSG_MOVE_STOP,
+    WorldCommandWotLK.MSG_MOVE_START_STRAFE_LEFT,
+    WorldCommandWotLK.MSG_MOVE_START_STRAFE_RIGHT,
     WorldCommandWotLK.MSG_MOVE_STOP_STRAFE,
     WorldCommandWotLK.MSG_MOVE_JUMP,
+    WorldCommandWotLK.MSG_MOVE_START_TURN_LEFT,
+    WorldCommandWotLK.MSG_MOVE_START_TURN_RIGHT,
+    WorldCommandWotLK.MSG_MOVE_STOP_TURN,
+    WorldCommandWotLK.MSG_MOVE_START_PITCH_UP,
+    WorldCommandWotLK.MSG_MOVE_START_PITCH_DOWN,
+    WorldCommandWotLK.MSG_MOVE_STOP_PITCH,
+    WorldCommandWotLK.MSG_MOVE_SET_RUN_MODE,
+    WorldCommandWotLK.MSG_MOVE_SET_WALK_MODE,
+    WorldCommandWotLK.MSG_MOVE_STOP_STRAFE,
+
     WorldCommandWotLK.MSG_MOVE_FALL_LAND,
     WorldCommandWotLK.MSG_MOVE_SET_FACING,
     WorldCommandWotLK.SMSG_MONSTER_MOVE,

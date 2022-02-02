@@ -11,9 +11,30 @@ public class WorldCommandWotLK : WorldCommandTBC
 
   // World/Movement
   public const int SMSG_DESTROY_OBJECT = 0x0AA;
+
+  public const int MSG_MOVE_START_FORWARD = 0x0B5;
+  public const int MSG_MOVE_START_BACKWARD = 0x0B6;
+  public const int MSG_MOVE_STOP = 0x0B7;
+  public const int MSG_MOVE_START_STRAFE_LEFT = 0x0B8;
+  public const int MSG_MOVE_START_STRAFE_RIGHT = 0x0B9;
   public const int MSG_MOVE_STOP_STRAFE = 0x0BA;
   public const int MSG_MOVE_JUMP = 0x0BB;
+  public const int MSG_MOVE_START_TURN_LEFT = 0x0BC;
+  public const int MSG_MOVE_START_TURN_RIGHT = 0x0BD;
+  public const int MSG_MOVE_STOP_TURN = 0x0BE;
+  public const int MSG_MOVE_START_PITCH_UP = 0x0BF;
+  public const int MSG_MOVE_START_PITCH_DOWN = 0x0C0;
+  public const int MSG_MOVE_STOP_PITCH = 0x0C1;
+  public const int MSG_MOVE_SET_RUN_MODE = 0x0C2;
+  public const int MSG_MOVE_SET_WALK_MODE = 0x0C3;
+  public const int MSG_MOVE_TOGGLE_LOGGING = 0x0C4;
+  public const int MSG_MOVE_TELEPORT = 0x0C5;
+  public const int MSG_MOVE_TELEPORT_CHEAT = 0x0C6;
+  public const int MSG_MOVE_TELEPORT_ACK = 0x0C7;
+  public const int MSG_MOVE_TOGGLE_FALL_LOGGING = 0x0C8;
   public const int MSG_MOVE_FALL_LAND = 0x0C9;
+  public const int MSG_MOVE_START_SWIM = 0x0CA;
+  public const int MSG_MOVE_STOP_SWIM = 0x0CB;
   public const int MSG_MOVE_SET_FACING = 0x0DA;
   public const int SMSG_MONSTER_MOVE = 0x0DD;
   public const int MSG_MOVE_HEARTBEAT = 0x0EE;
