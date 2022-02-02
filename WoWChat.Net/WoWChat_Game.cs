@@ -207,6 +207,9 @@ public partial class WoWChat : IObserver<GameEvent>
       case GameChannelNotificationEvent channelNotification:
         _logger.LogInformation("Channel Notification: {channelName} - {kind}", channelNotification.ChannelName, channelNotification.Kind);
         break;
+      case GameSocialListEvent socialListEvent:
+        _logger.LogInformation("Social List: You have {friendsCount} friends.", socialListEvent.Friends.Count);
+        break;
       case GameNameQueryEvent nameQueryEvent:
         _nameLookup.AddOrUpdate(nameQueryEvent.NameQuery);
         break;

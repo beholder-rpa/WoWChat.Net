@@ -58,6 +58,7 @@ public class WorldCommandWotLK : WorldCommandTBC
   public const int SMSG_SET_FORCED_REACTIONS = 0x2A5;
   public const int SMSG_INIT_WORLD_STATES = 0x2C2;
   public const int SMSG_UPDATE_WORLD_STATE = 0x2C3;
+  public const int SMSG_PLAY_SOUND = 0x2D2;
   public const int SMSG_WEATHER = 0x2F4;
 
   public const int MSG_SET_DUNGEON_DIFFICULTY = 0x329;

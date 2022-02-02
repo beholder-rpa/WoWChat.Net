@@ -58,6 +58,7 @@ public partial class GamePacketHandler
     WorldCommandWotLK.SMSG_SET_FORCED_REACTIONS,
     WorldCommandWotLK.SMSG_INIT_WORLD_STATES,
     WorldCommandWotLK.SMSG_UPDATE_WORLD_STATE,
+    WorldCommandWotLK.SMSG_PLAY_SOUND,
     WorldCommandWotLK.SMSG_WEATHER,
 
     WorldCommandWotLK.MSG_SET_DUNGEON_DIFFICULTY,
