@@ -48,6 +48,13 @@
         Enabled = false,
       };
       _keepAliveTimer.Elapsed += RunKeepAliveExecutor;
+
+      _ensureJoinedWorldAfterConnectTimer = new Timer(30 * 1000)
+      {
+        AutoReset = false,
+        Enabled = false,
+      };
+      _ensureJoinedWorldAfterConnectTimer.Elapsed += RunFailedToJoinWorldExecutor;
     }
 
     public async Task Run(CancellationToken cancellationToken)

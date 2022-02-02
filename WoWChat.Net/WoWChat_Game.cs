@@ -27,6 +27,7 @@ public partial class WoWChat : IObserver<GameEvent>
   // Timers
   protected readonly Timer _pingTimer;
   protected readonly Timer _keepAliveTimer;
+  protected readonly Timer _ensureJoinedWorldAfterConnectTimer;
 
   public Task ConnectGameServer(GameServerInfo gameServer, byte[] sessionKey)
   {
@@ -56,6 +57,7 @@ public partial class WoWChat : IObserver<GameEvent>
     _inWorld = false;
     _pingTimer.Stop();
     _keepAliveTimer.Stop();
+    _ensureJoinedWorldAfterConnectTimer.Stop();
     _channelLookup.Clear();
     _nameLookup.Clear();
 
@@ -104,6 +106,12 @@ public partial class WoWChat : IObserver<GameEvent>
     }
 
     _gameConnector.RunCommand<KeepAliveCommand>().Forget();
+  }
+
+  protected virtual void RunFailedToJoinWorldExecutor(object sender, ElapsedEventArgs e)
+  {
+    _logger.LogDebug("Failed to join world in {elapsed}s. Reconnecting.", TimeSpan.FromMilliseconds(((Timer)sender).Interval).TotalSeconds);
+    Reconnect().Forget();
   }
 
   /// <summary>
@@ -162,6 +170,7 @@ public partial class WoWChat : IObserver<GameEvent>
       case GameLoggedInEvent:
         _logger.LogInformation("Successfully logged in!");
         _pingTimer.Start();
+        _ensureJoinedWorldAfterConnectTimer.Start();
         _gameConnector?.RunCommand<EnumerateCharactersCommand>().Wait();
         break;
       case GameRetrievedCharactersEvent retrievedCharacters:
@@ -191,6 +200,7 @@ public partial class WoWChat : IObserver<GameEvent>
         }
         _logger.LogInformation("Successfully joined the world!");
         _inWorld = true;
+        _ensureJoinedWorldAfterConnectTimer.Stop();
         if (_options.WoW.GetExpansion() >= WoWExpansion.TBC)
         {
           _keepAliveTimer.Start();
