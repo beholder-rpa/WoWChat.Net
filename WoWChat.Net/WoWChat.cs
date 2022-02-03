@@ -1,6 +1,7 @@
 ﻿namespace WoWChat.Net
 {
   using Common;
+  using DotNetty.Transport.Channels;
   using Extensions;
   using Microsoft.Extensions.Logging;
   using Microsoft.Extensions.Options;
@@ -16,6 +17,8 @@
   {
     private readonly IServiceProvider _serviceProvider;
 
+    private readonly IEventLoopGroup _group;
+
     private readonly WowChatOptions _options;
 
     private readonly ILogger<WoWChat> _logger;
@@ -24,12 +27,14 @@
 
     public WoWChat(
       IServiceProvider serviceProvider,
+      IEventLoopGroup group,
       GameChannelLookup channelLookup,
       GameNameLookup nameLookup,
       IOptionsSnapshot<WowChatOptions> options,
       ILogger<WoWChat> logger)
     {
       _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+      _group = group ?? throw new ArgumentNullException(nameof(group));
       _channelLookup = channelLookup ?? throw new ArgumentNullException(nameof(channelLookup));
       _nameLookup = nameLookup ?? throw new ArgumentNullException(nameof(nameLookup));
       _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
@@ -65,8 +70,9 @@
 
     protected virtual async Task Reconnect()
     {
-      DisconnectGameServer().Forget();
-      DisconnectLogonServer().Forget();
+      _group.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(2000)).Wait(2500);
+      DisconnectGameServer().Wait(2000);
+      DisconnectLogonServer().Wait(2000);
       if (!_cancellationToken.IsCancellationRequested)
       {
         _logger.LogInformation("Disconnected from game server! Reconnecting in {reconnectDelay} seconds...", TimeSpan.FromMilliseconds(_options.ReconnectDelayMs));

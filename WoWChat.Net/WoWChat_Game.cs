@@ -108,9 +108,9 @@ public partial class WoWChat : IObserver<GameEvent>
     _gameConnector.RunCommand<KeepAliveCommand>().Forget();
   }
 
-  protected virtual void RunFailedToJoinWorldExecutor(object sender, ElapsedEventArgs e)
+  protected virtual void RunFailedToJoinWorldExecutor(object? sender, ElapsedEventArgs e)
   {
-    _logger.LogDebug("Failed to join world in {elapsed}s. Reconnecting.", TimeSpan.FromMilliseconds(((Timer)sender).Interval).TotalSeconds);
+    _logger.LogDebug("Failed to join world in {elapsed}s. Reconnecting.", sender != null ? TimeSpan.FromMilliseconds(((Timer)sender).Interval).TotalSeconds : "??");
     Reconnect().Forget();
   }
 
