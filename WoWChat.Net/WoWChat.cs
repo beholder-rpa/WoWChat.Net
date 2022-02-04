@@ -54,6 +54,13 @@
       };
       _keepAliveTimer.Elapsed += RunKeepAliveExecutor;
 
+      _ensureRetrieveRealmListAfterConnectTimer = new Timer(30 * 1000)
+      {
+        AutoReset = false,
+        Enabled = false,
+      };
+      _ensureRetrieveRealmListAfterConnectTimer.Elapsed += RunFailedToJoinWorldExecutor;
+
       _ensureJoinedWorldAfterConnectTimer = new Timer(30 * 1000)
       {
         AutoReset = false,
@@ -70,6 +77,8 @@
 
     protected virtual async Task Reconnect()
     {
+      _sessionKey = Array.Empty<byte>();
+      _selectedGameServer = null;
       _group.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(2000)).Wait(2500);
       DisconnectGameServer().Wait(2000);
       DisconnectLogonServer().Wait(2000);

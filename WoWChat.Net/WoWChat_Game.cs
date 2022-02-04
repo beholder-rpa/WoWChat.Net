@@ -15,8 +15,6 @@ public partial class WoWChat : IObserver<GameEvent>
 {
   private readonly GameChannelLookup _channelLookup;
   private readonly GameNameLookup _nameLookup;
-  private byte[] _sessionKey = Array.Empty<byte>();
-  private GameServerInfo? _selectedGameServer;
   private GameCharacter? _selectedCharacter;
   private bool _inWorld = false;
 
@@ -41,6 +39,7 @@ public partial class WoWChat : IObserver<GameEvent>
       throw new ArgumentNullException(nameof(sessionKey));
     }
 
+    _selectedCharacter = null;
     _gameConnector = _serviceProvider.GetRequiredService<GameConnector>();
 
     _gameConnectorObserver = ((IObservable<GameEvent>)_gameConnector).Subscribe(this);
@@ -52,6 +51,7 @@ public partial class WoWChat : IObserver<GameEvent>
 
   public Task DisconnectGameServer()
   {
+    _selectedCharacter = null;
     _logger.LogDebug("Disconnecting from game server...");
 
     _inWorld = false;
@@ -166,11 +166,11 @@ public partial class WoWChat : IObserver<GameEvent>
         break;
       case GameConnectedEvent:
         _logger.LogInformation("Connected! Authenticating...");
+        _ensureJoinedWorldAfterConnectTimer.Start();
         break;
       case GameLoggedInEvent:
         _logger.LogInformation("Successfully logged in!");
         _pingTimer.Start();
-        _ensureJoinedWorldAfterConnectTimer.Start();
         _gameConnector?.RunCommand<EnumerateCharactersCommand>().Wait();
         break;
       case GameRetrievedCharactersEvent retrievedCharacters:

@@ -1,19 +1,27 @@
 ﻿namespace WoWChat.Net;
 
+using Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Realm;
 using Realm.Events;
 using Realm.PacketCommands;
+using System.Timers;
 
 public partial class WoWChat : IObserver<RealmEvent>
 {
+  protected readonly Timer _ensureRetrieveRealmListAfterConnectTimer;
+
+  private byte[] _sessionKey = Array.Empty<byte>();
+  private GameServerInfo? _selectedGameServer;
   private RealmConnector? _realmConnector;
   private IDisposable? _realmConnectorObserver;
   private IDisposable? _realmPacketHandlerObserver;
 
   public Task ConnectLogonServer()
   {
+    _sessionKey = Array.Empty<byte>();
+    _selectedGameServer = null;
     _realmConnector = _serviceProvider.GetRequiredService<RealmConnector>();
 
     _realmConnectorObserver = ((IObservable<RealmEvent>)_realmConnector).Subscribe(this);
@@ -26,6 +34,10 @@ public partial class WoWChat : IObserver<RealmEvent>
   public Task DisconnectLogonServer()
   {
     _logger.LogDebug("Disconnecting from logon server...");
+    _sessionKey = Array.Empty<byte>();
+    _selectedGameServer = null;
+    _selectedCharacter = null;
+    _ensureRetrieveRealmListAfterConnectTimer.Stop();
     if (_realmPacketHandlerObserver != null)
     {
       _realmPacketHandlerObserver.Dispose();
@@ -69,6 +81,7 @@ public partial class WoWChat : IObserver<RealmEvent>
         break;
       case RealmConnectedEvent connectedEvent:
         _logger.LogInformation("Connected to logon server! Sending account login information...");
+        _ensureRetrieveRealmListAfterConnectTimer.Start();
         break;
       case RealmAuthenticatedEvent authenticatedEvent:
         _logger.LogInformation("Successfully logged into logon server. Looking for realm {realmName}", _options.WoW.RealmName);
@@ -78,6 +91,7 @@ public partial class WoWChat : IObserver<RealmEvent>
       case RealmListEvent listEvent:
         var configRealm = _options.WoW.RealmName;
         var realmList = listEvent.RealmList;
+        _ensureRetrieveRealmListAfterConnectTimer.Stop();
 
         _logger.LogInformation("Retrieved {realmCount} realms.", realmList.Count);
         var realm = realmList.FirstOrDefault(realm => string.Equals(realm.Name, configRealm, StringComparison.CurrentCultureIgnoreCase));
