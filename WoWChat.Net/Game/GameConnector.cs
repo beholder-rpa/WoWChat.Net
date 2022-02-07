@@ -23,7 +23,6 @@ public partial class GameConnector : IObservable<GameEvent>
   protected IDictionary<int, IPacketCommand<GameEvent>> _packetCommands = new Dictionary<int, IPacketCommand<GameEvent>>();
 
   private GameServerInfo? _gameServer;
-  private SessionInfo? _session;
   private IChannel? _gameChannel;
 
   public GameConnector(
@@ -74,7 +73,7 @@ public partial class GameConnector : IObservable<GameEvent>
       {
         if ((packetCommandAttribute.Expansion & expansion) != expansion)
         {
-          _logger.LogDebug($"Skipping {handlerType} for {expansion} (indicates {packetCommandAttribute.Expansion})");
+          _logger.LogDebug("Skipping {handlerType} for {targetExpansion} (indicates {packetHandlerExpansion})", handlerType, expansion, packetCommandAttribute.Expansion);
           continue;
         }
 
@@ -110,7 +109,6 @@ public partial class GameConnector : IObservable<GameEvent>
     }
 
     _gameServer = gameServer ?? throw new ArgumentNullException(nameof(gameServer));
-    _session = session ?? throw new ArgumentNullException(nameof(session));
     _channelInitializer.SetConnectionOptions(_gameServer, session);
 
     OnGameEvent(new GameConnectingEvent()

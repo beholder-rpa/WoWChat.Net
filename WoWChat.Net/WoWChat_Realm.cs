@@ -87,7 +87,7 @@ public partial class WoWChat : IObserver<RealmEvent>
         _logger.LogInformation("Successfully logged into logon server. Looking for realm {realmName}", _options.WoW.RealmName);
         _session = new SessionInfo()
         {
-          StartTime = DateTime.Now,
+          StartTime = DateTime.UtcNow,
           SessionKey = authenticatedEvent.SessionKey,
         };
         _realmConnector?.RunCommand<RealmListCommand>().Wait();
