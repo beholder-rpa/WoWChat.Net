@@ -27,16 +27,16 @@ public partial class WoWChat : IObserver<GameEvent>
   protected readonly Timer _keepAliveTimer;
   protected readonly Timer _ensureJoinedWorldAfterConnectTimer;
 
-  public Task ConnectGameServer(GameServerInfo gameServer, byte[] sessionKey)
+  public Task ConnectGameServer(GameServerInfo gameServer, SessionInfo session)
   {
     if (gameServer == null)
     {
       throw new ArgumentNullException(nameof(gameServer));
     }
 
-    if (sessionKey == null || sessionKey.Length != 40)
+    if (session == null || session.SessionKey == null || session.SessionKey.Length != 40)
     {
-      throw new ArgumentNullException(nameof(sessionKey));
+      throw new ArgumentOutOfRangeException(nameof(session));
     }
 
     _selectedCharacter = null;
@@ -45,7 +45,7 @@ public partial class WoWChat : IObserver<GameEvent>
     _gameConnectorObserver = ((IObservable<GameEvent>)_gameConnector).Subscribe(this);
     _gamePacketHandlerObserver = ((IObservable<GameEvent>)_gameConnector.GamePacketHandler).Subscribe(this);
 
-    _gameConnector.Connect(gameServer, sessionKey).Wait(5000);
+    _gameConnector.Connect(gameServer, _session).Wait(5000);
     return Task.CompletedTask;
   }
 
@@ -230,6 +230,9 @@ public partial class WoWChat : IObserver<GameEvent>
           command.Guid = nameQueryRequestEvent.Guid;
           _gameConnector?.SendCommand(command).Forget();
         }
+        break;
+      case GameWeatherEvent weatherEvent:
+        _logger.LogInformation("Weather: It is now {weatherState} at {intensity} {isAbrupt}", weatherEvent.State, weatherEvent.Intensity, weatherEvent.IsAbrupt);
         break;
       case GameServerMessageEvent serverMessageEvent:
         switch (serverMessageEvent.Kind)

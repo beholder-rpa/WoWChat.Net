@@ -40,9 +40,7 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
 
   public GameServerInfo? Realm { get; set; }
 
-  public byte[]? SessionKey { get; set; }
-
-  public int? ClientSeed { get; set; }
+  public SessionInfo? Session { get; set; }
 
   public int? ServerSeed { get; set; }
 
@@ -50,35 +48,45 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
 
   public void HandlePacket(IChannelHandlerContext ctx, Packet msg)
   {
-    if (SessionKey == null)
+    if (Session == null)
     {
-      throw new InvalidOperationException("SessionKey has not been set.");
+      throw new InvalidOperationException("Session has not been set.");
+    }
+
+    if (DateTime.UtcNow.Subtract(Session.StartTime) > TimeSpan.FromSeconds(60))
+    {
+      throw new InvalidOperationException("Session was initialized over a minute ago - aborting.");
     }
 
     var byteBuf = ParseServerAuthChallenge(ctx, msg);
 
-    _headerCrypt.Init(SessionKey);
+    _headerCrypt.Init(Session.SessionKey);
 
     ctx.WriteAndFlushAsync(new Packet(WorldCommand.CMSG_AUTH_CHALLENGE, byteBuf));
   }
 
   protected virtual IByteBuffer ParseServerAuthChallenge(IChannelHandlerContext ctx, Packet msg)
   {
-    if (SessionKey == null)
+    if (Session == null)
     {
-      throw new InvalidOperationException("SessionKey has not been set.");
+      throw new InvalidOperationException("Session has not been set.");
+    }
+
+    if (DateTime.UtcNow.Subtract(Session.StartTime) > TimeSpan.FromSeconds(60))
+    {
+      throw new InvalidOperationException("Session was initialized over a minute ago - aborting.");
     }
 
     var account = _options.WoW.AccountName.ToUpperInvariant();
 
     ServerSeed = msg.ByteBuf.ReadInt();
 
-    if (ClientSeed.HasValue == false || ClientSeed.Value == default)
+    if (Session.ClientSeed.HasValue == false || Session.ClientSeed.Value == default)
     {
       var rand = RandomNumberGenerator.Create();
       var randomClientSeed = new byte[4];
       rand.GetBytes(randomClientSeed);
-      ClientSeed = BitConverter.ToInt32(randomClientSeed);
+      Session = Session with { ClientSeed = BitConverter.ToInt32(randomClientSeed) };
     }
 
     var output = ctx.Allocator.Buffer(200, 400);
@@ -87,15 +95,15 @@ public class ServerAuthChallengePacketHandler : IPacketHandler<GameEvent>
     output.WriteIntLE(0);
     output.WriteAscii(account);
     output.WriteByte(0);
-    output.WriteInt(ClientSeed.Value);
+    output.WriteInt(Session.ClientSeed.Value);
 
     using SHA1 alg = SHA1.Create();
     var hash = alg.ComputeHash(
       Encoding.ASCII.GetBytes(account).Combine(
         new byte[] { 0, 0, 0, 0 },
-        ClientSeed.Value.ToBytes(),
+        Session.ClientSeed.Value.ToBytes(),
         ServerSeed.Value.ToBytes(),
-        SessionKey
+        Session.SessionKey
         ));
     output.WriteBytes(hash);
 

@@ -42,7 +42,7 @@
 
     public GameServerInfo? Realm { get; set; } = null;
 
-    public byte[]? SessionKey { get; set; } = null;
+    public SessionInfo? Session { get; set; } = null;
 
     public override void ChannelInactive(IChannelHandlerContext context)
     {
@@ -118,13 +118,9 @@
     {
       switch (msg.Id)
       {
-        case WorldCommand.SMSG_AUTH_CHALLENGE:
-          if (_packetHandlers[msg.Id] is not ServerAuthChallengePacketHandler authChallengePacketHandler)
-          {
-            throw new InvalidOperationException($"Unable to locate ServerAuthChallengePacketHandler for {msg.Id}");
-          }
+        case WorldCommand.SMSG_AUTH_CHALLENGE when _packetHandlers[msg.Id] is ServerAuthChallengePacketHandler authChallengePacketHandler && Session != null:
           authChallengePacketHandler.Realm = Realm;
-          authChallengePacketHandler.SessionKey = SessionKey;
+          authChallengePacketHandler.Session = Session;
           authChallengePacketHandler.HandlePacket(context, msg);
           break;
         default:

@@ -12,7 +12,7 @@ public partial class WoWChat : IObserver<RealmEvent>
 {
   protected readonly Timer _ensureRetrieveRealmListAfterConnectTimer;
 
-  private byte[] _sessionKey = Array.Empty<byte>();
+  private SessionInfo _session = new SessionInfo();
   private GameServerInfo? _selectedGameServer;
   private RealmConnector? _realmConnector;
   private IDisposable? _realmConnectorObserver;
@@ -20,7 +20,7 @@ public partial class WoWChat : IObserver<RealmEvent>
 
   public Task ConnectLogonServer()
   {
-    _sessionKey = Array.Empty<byte>();
+    _session = new SessionInfo();
     _selectedGameServer = null;
     _realmConnector = _serviceProvider.GetRequiredService<RealmConnector>();
 
@@ -34,7 +34,7 @@ public partial class WoWChat : IObserver<RealmEvent>
   public Task DisconnectLogonServer()
   {
     _logger.LogDebug("Disconnecting from logon server...");
-    _sessionKey = Array.Empty<byte>();
+    _session = new SessionInfo();
     _selectedGameServer = null;
     _selectedCharacter = null;
     _ensureRetrieveRealmListAfterConnectTimer.Stop();
@@ -85,7 +85,11 @@ public partial class WoWChat : IObserver<RealmEvent>
         break;
       case RealmAuthenticatedEvent authenticatedEvent:
         _logger.LogInformation("Successfully logged into logon server. Looking for realm {realmName}", _options.WoW.RealmName);
-        _sessionKey = authenticatedEvent.SessionKey;
+        _session = new SessionInfo()
+        {
+          StartTime = DateTime.Now,
+          SessionKey = authenticatedEvent.SessionKey,
+        };
         _realmConnector?.RunCommand<RealmListCommand>().Wait();
         break;
       case RealmListEvent listEvent:
@@ -110,7 +114,7 @@ public partial class WoWChat : IObserver<RealmEvent>
         {
           _selectedGameServer = realm;
           _logger.LogInformation("Successfully located #{realmId} - {realmName} at {host}:{port} ({version})", realm.RealmId, realm.Name, realm.Host, realm.Port, realm.Version == null ? "Unknown Version" : realm.Version.ToString());
-          ConnectGameServer(_selectedGameServer, _sessionKey).Wait();
+          ConnectGameServer(_selectedGameServer, _session).Wait();
           DisconnectLogonServer().Wait();
         }
         break;

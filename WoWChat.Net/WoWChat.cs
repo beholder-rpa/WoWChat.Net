@@ -77,7 +77,7 @@
 
     protected virtual async Task Reconnect()
     {
-      _sessionKey = Array.Empty<byte>();
+      _session = new SessionInfo();
       _selectedGameServer = null;
       _group.ShutdownGracefullyAsync(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(2000)).Wait(2500);
       DisconnectGameServer().Wait(2000);

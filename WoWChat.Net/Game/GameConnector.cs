@@ -23,7 +23,7 @@ public partial class GameConnector : IObservable<GameEvent>
   protected IDictionary<int, IPacketCommand<GameEvent>> _packetCommands = new Dictionary<int, IPacketCommand<GameEvent>>();
 
   private GameServerInfo? _gameServer;
-  private byte[]? _sessionKey;
+  private SessionInfo? _session;
   private IChannel? _gameChannel;
 
   public GameConnector(
@@ -92,16 +92,16 @@ public partial class GameConnector : IObservable<GameEvent>
     }
   }
 
-  public async Task Connect(GameServerInfo gameServer, byte[] sessionKey)
+  public async Task Connect(GameServerInfo gameServer, SessionInfo session)
   {
     if (gameServer == null)
     {
       throw new ArgumentNullException(nameof(gameServer));
     }
 
-    if (sessionKey == null || sessionKey.Length != 40)
+    if (session == null || session.SessionKey == null || session.SessionKey.Length != 40)
     {
-      throw new ArgumentNullException(nameof(sessionKey));
+      throw new ArgumentOutOfRangeException(nameof(session));
     }
 
     if (_gameChannel != null && _gameChannel.Active)
@@ -110,8 +110,8 @@ public partial class GameConnector : IObservable<GameEvent>
     }
 
     _gameServer = gameServer ?? throw new ArgumentNullException(nameof(gameServer));
-    _sessionKey = sessionKey ?? throw new ArgumentNullException(nameof(sessionKey));
-    _channelInitializer.SetConnectionOptions(_gameServer, _sessionKey);
+    _session = session ?? throw new ArgumentNullException(nameof(session));
+    _channelInitializer.SetConnectionOptions(_gameServer, session);
 
     OnGameEvent(new GameConnectingEvent()
     {

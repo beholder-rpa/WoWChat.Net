@@ -42,27 +42,41 @@ public partial class GamePacketHandler
     WorldCommandWotLK.MSG_MOVE_STOP_STRAFE,
 
     WorldCommandWotLK.MSG_MOVE_FALL_LAND,
+    WorldCommandWotLK.MSG_MOVE_SET_RUN_SPEED,
+
     WorldCommandWotLK.MSG_MOVE_SET_FACING,
     WorldCommandWotLK.SMSG_MONSTER_MOVE,
     WorldCommandWotLK.MSG_MOVE_HEARTBEAT,
     WorldCommandWotLK.SMSG_FORCE_MOVE_ROOT,
 
+    WorldCommandWotLK.SMSG_SPELL_START,
     WorldCommandWotLK.SMSG_SPELL_GO,
     WorldCommandWotLK.SMSG_SPELL_COOLDOWN,
+
+    WorldCommandWotLK.SMSG_ATTACK_START,
+    WorldCommandWotLK.SMSG_ATTACK_STOP,
+    WorldCommandWotLK.SMSG_ATTACK_SWING_NOT_IN_RANGE,
+    WorldCommandWotLK.SMSG_ATTACK_SWING_BAD_FACING,
+
     WorldCommandWotLK.SMSG_SPELLHEALLOG,
     WorldCommandWotLK.SMSG_BIND_POINT_UPDATE,
     WorldCommandWotLK.SMSG_CLEAR_COOLDOWN,
     WorldCommandWotLK.CMSG_GM_NUKE,
+    WorldCommandWotLK.SMSG_ENVIRONMENTAL_DAMAGE_LOG,
 
     WorldCommandWotLK.SMSG_ACCOUNT_DATA_TIMES,
+
+    WorldCommandWotLK.SMSG_SPELLLOGMISS,
+    WorldCommandWotLK.SMSG_SPELLLOGEXECUTE,
+
     WorldCommandWotLK.SMSG_SET_FORCED_REACTIONS,
     WorldCommandWotLK.SMSG_INIT_WORLD_STATES,
     WorldCommandWotLK.SMSG_UPDATE_WORLD_STATE,
     WorldCommandWotLK.SMSG_PLAY_SOUND,
-    WorldCommandWotLK.SMSG_WEATHER,
 
     WorldCommandWotLK.MSG_SET_DUNGEON_DIFFICULTY,
     WorldCommandWotLK.SMSG_INSTANCE_DIFFICULTY,
+    WorldCommandWotLK.SMSG_DISMOUNT,
     WorldCommandWotLK.SMSG_FEATURE_SYSTEM_STATUS,
 
     WorldCommandWotLK.SMSG_QUESTGIVER_STATUS_MULTIPLE,

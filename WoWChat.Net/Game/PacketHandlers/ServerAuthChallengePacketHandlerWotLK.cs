@@ -42,9 +42,15 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
     {
       throw new InvalidOperationException("Realm has not been set.");
     }
-    if (SessionKey == null)
+
+    if (Session == null)
     {
-      throw new InvalidOperationException("SessionKey has not been set.");
+      throw new InvalidOperationException("Session has not been set.");
+    }
+
+    if (DateTime.UtcNow.Subtract(Session.StartTime) > TimeSpan.FromSeconds(60))
+    {
+      throw new InvalidOperationException("Session was initialized over a minute ago - aborting.");
     }
 
     var account = _options.WoW.AccountName.ToUpperInvariant();
@@ -52,12 +58,12 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
     msg.ByteBuf.SkipBytes(4); // wotlk
     ServerSeed = msg.ByteBuf.ReadInt();
 
-    if (ClientSeed.HasValue == false || ClientSeed.Value == default)
+    if (Session.ClientSeed.HasValue == false || Session.ClientSeed.Value == default)
     {
       var rand = RandomNumberGenerator.Create();
       var randomClientSeed = new byte[4];
       rand.GetBytes(randomClientSeed);
-      ClientSeed = BitConverter.ToInt32(randomClientSeed);
+      Session = Session with { ClientSeed = BitConverter.ToInt32(randomClientSeed) };
     }
 
     var output = ctx.Allocator.Buffer(200, 400);
@@ -67,7 +73,7 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
     output.WriteAscii(account);
     output.WriteByte(0);
     output.WriteInt(0); // wotlk
-    output.WriteInt(ClientSeed.Value);
+    output.WriteInt(Session.ClientSeed.Value);
     output.WriteIntLE(0); // wotlk
     output.WriteIntLE(0); // wotlk
     output.WriteIntLE(Realm.RealmId); // wotlk
@@ -77,9 +83,9 @@ public class ServerAuthChallengePacketHandlerWotLK : ServerAuthChallengePacketHa
     var hash = alg.ComputeHash(
       Encoding.ASCII.GetBytes(account).Combine(
         new byte[] { 0, 0, 0, 0 },
-        ClientSeed.Value.ToBytes(),
+        Session.ClientSeed.Value.ToBytes(),
         ServerSeed.Value.ToBytes(),
-        SessionKey
+        Session.SessionKey
         ));
     output.WriteBytes(hash);
 

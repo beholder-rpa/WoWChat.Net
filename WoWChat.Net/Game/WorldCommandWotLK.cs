@@ -42,19 +42,34 @@ public class WorldCommandWotLK : WorldCommandTBC
   public const int MSG_MOVE_FALL_LAND = 0x0C9;
   public const int MSG_MOVE_START_SWIM = 0x0CA;
   public const int MSG_MOVE_STOP_SWIM = 0x0CB;
+  public const int MSG_MOVE_SET_RUN_SPEED = 0x0CD;
   public const int MSG_MOVE_SET_FACING = 0x0DA;
   public const int SMSG_MONSTER_MOVE = 0x0DD;
   public const int MSG_MOVE_HEARTBEAT = 0x0EE;
   public const int SMSG_FORCE_MOVE_ROOT = 0x0E8;
 
+  public const int SMSG_SPELL_START = 0x131;
   public const int SMSG_SPELL_GO = 0x132;
   public const int SMSG_SPELL_COOLDOWN = 0x134;
+
+  public const int CMSG_ATTACK_SWING = 0x141;
+  public const int CMSG_ATTACK_STOP = 0x142;
+  public const int SMSG_ATTACK_START = 0x143;
+  public const int SMSG_ATTACK_STOP = 0x144;
+  public const int SMSG_ATTACK_SWING_NOT_IN_RANGE = 0x145;
+  public const int SMSG_ATTACK_SWING_BAD_FACING = 0x146;
+
   public const int SMSG_SPELLHEALLOG = 0x150;
   public const int SMSG_BIND_POINT_UPDATE = 0x155;
   public const int SMSG_CLEAR_COOLDOWN = 0x1DE;
   public const int CMSG_GM_NUKE = 0x1FA;
+  public const int SMSG_ENVIRONMENTAL_DAMAGE_LOG = 0x1FC;
 
   public const int SMSG_ACCOUNT_DATA_TIMES = 0x209;
+  
+  public const int SMSG_SPELLLOGMISS = 0x24B;
+  public const int SMSG_SPELLLOGEXECUTE = 0x24C;
+
   public const int SMSG_ZONE_UNDER_ATTACK = 0x254;
   public const int SMSG_SET_FORCED_REACTIONS = 0x2A5;
   public const int SMSG_INIT_WORLD_STATES = 0x2C2;
@@ -64,6 +79,7 @@ public class WorldCommandWotLK : WorldCommandTBC
 
   public const int MSG_SET_DUNGEON_DIFFICULTY = 0x329;
   public const int SMSG_INSTANCE_DIFFICULTY = 0x033B;
+  public const int SMSG_DISMOUNT = 0x3AC;
   public const int SMSG_FEATURE_SYSTEM_STATUS = 0x3C9;
 
   public new const int CMSG_KEEP_ALIVE = 0x0407;

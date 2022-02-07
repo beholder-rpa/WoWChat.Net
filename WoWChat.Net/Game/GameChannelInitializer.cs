@@ -40,10 +40,10 @@
     }
     public GamePacketHandler GamePacketHandler { get { return _gamePacketHandler; } }
 
-    public void SetConnectionOptions(GameServerInfo realm, byte[] sessionKey)
+    public void SetConnectionOptions(GameServerInfo realm, SessionInfo session)
     {
       _gamePacketHandler.Realm = realm;
-      _gamePacketHandler.SessionKey = sessionKey;
+      _gamePacketHandler.Session = session;
     }
 
     protected override void InitChannel(TcpSocketChannel channel)
