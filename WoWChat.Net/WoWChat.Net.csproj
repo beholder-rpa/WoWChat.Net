@@ -24,7 +24,7 @@
     <PackageReference Include="DotNetty.Codecs" Version="0.7.0" />
     <PackageReference Include="DotNetty.Common" Version="0.7.1" />
     <PackageReference Include="DotNetty.Handlers" Version="0.7.0" />
-    <PackageReference Include="DotNetty.Transport" Version="0.7.0" />
+    <PackageReference Include="DotNetty.Transport" Version="0.7.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
